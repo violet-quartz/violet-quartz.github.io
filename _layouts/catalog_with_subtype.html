@@ -1,0 +1,75 @@
+---
+layout: default
+---
+<link rel="stylesheet" href="\assets\css\tab.css">
+<div class="home">
+    <script>
+        function openTab(evt, tabName) {
+            // Declare all variables
+            var i, tabcontent, tablinks;
+
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+    {%- if page.title -%}
+    <h1 class="page-heading">{{ page.title }}</h1>
+    {%- endif -%}
+
+    {% assign type_subtypes = site.data.type_subtypes | where: 'type', page.type | first %}
+    {% if type_subtypes.subtypes %}
+    <div class="tab">
+        {% assign has_active = false %}
+        {% for subtype in type_subtypes.subtypes %}
+        {% if has_active %}
+        <button class="tablinks" onclick="openTab(event, '{{ subtype }}')">{{ subtype }}</button>
+        {% else %}
+        <button class="tablinks active" onclick="openTab(event, '{{ subtype }}')">{{ subtype }}</button>
+        {% assign has_active = true %}
+        {% assign active_type = subtype %}
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% for subtype in type_subtypes.subtypes %}
+    <div id="{{ subtype }}" class="tabcontent" {% if subtype == active_type %}style="display: block"{% endif %}>
+        {% assign filtered_posts = site.posts | where: 'type', page.type | where: 'subtype', subtype %}
+        {%- if filtered_posts.size > 0 -%}
+        {%- if page.list_title -%}
+        <h2 class="post-list-heading">{{ page.list_title }}</h2>
+        {%- endif -%}
+        <ul class="post-list">
+            {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
+            {%- for post in filtered_posts -%}
+            <li>
+                <span class="post-meta">{{ post.date | date: date_format }}</span>
+                <h3>
+                    <a class="post-link" href="{{ post.url | relative_url }}">
+                        {{ post.title | escape }}
+                    </a>
+                </h3>
+                {%- if site.show_excerpts -%}
+                {{ post.excerpt }}
+                {%- endif -%}
+            </li>
+            {%- endfor -%}
+        </ul>
+        {% else %}
+        <h2>There is no content here yet.</h2>
+        {%- endif -%}
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
