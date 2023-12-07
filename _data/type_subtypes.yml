@@ -2,5 +2,6 @@
   subtypes:
   - python
   - cplusplus
+  - other
 - type: journal
  
