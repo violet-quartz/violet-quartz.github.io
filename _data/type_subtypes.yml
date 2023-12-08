@@ -1,7 +1,9 @@
 - type: note
   subtypes:
   - python
+  - large language model
   - cplusplus
+  - command line
   - other
 - type: journal
  

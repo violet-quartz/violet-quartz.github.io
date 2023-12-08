@@ -27,7 +27,6 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  violet-quart
 linkedin_username: flora-ma
-#paginate: 5
 show_excerpts: true
 header_pages:
   - title: Tech Blog
