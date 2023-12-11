@@ -6,6 +6,7 @@ categories: practice
 type: note
 subtype: python
 excerpt_separator: $$end_excerpt$$
+istop: true
 ---
 - Create virual environment for isolation
 ```console

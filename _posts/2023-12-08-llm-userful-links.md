@@ -6,6 +6,7 @@ categories: knowledge
 type: note
 subtype: large language model
 excerpt_separator: $$end_excerpt$$
+istop: true
 ---
 - LLM
     

@@ -32,7 +32,7 @@ header_pages:
   - title: Tech Blog
     url: /blogs/
     path: blogs.html
-  - title: Knowledge Summary
+  - title: Knowledge Notes
     url: /notes/
     path: notes.html
   - title: Journals
