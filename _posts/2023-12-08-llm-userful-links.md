@@ -6,7 +6,6 @@ categories: knowledge
 type: note
 subtype: large language model
 excerpt_separator: $$end_excerpt$$
-istop: true
 ---
 - LLM
     
@@ -20,8 +19,8 @@ istop: true
 $$end_excerpt$$
     - Coding
         - [GitHub Copilot](https://github.com/features/copilot)
-    - Writing
-        -[notion.ai](https://www.notion.so/product/ai)
+    - Writing  
+        - [notion.ai](https://www.notion.so/product/ai)
     - Picture
         - [Midjourney](https://www.midjourney.com/)
         - [Dall-E 2](https://openai.com/dall-e-2)
