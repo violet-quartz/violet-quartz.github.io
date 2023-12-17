@@ -2,8 +2,7 @@
 layout: post
 title:  "Large Language Model Useful Links"
 date:   2023-12-08 15:02 +0800
-categories: knowledge
-type: note
+categories: note
 subtype: large language model
 excerpt_separator: $$end_excerpt$$
 ---

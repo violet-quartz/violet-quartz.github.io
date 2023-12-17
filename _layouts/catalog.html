@@ -9,7 +9,7 @@ layout: default
 
     {{ content }}
 
-    {% assign filtered_posts = site.posts | where: 'type', page.type %}
+    {% assign filtered_posts = site.posts | where: 'categories', page.type %}
 
     {%- if filtered_posts.size > 0 -%}
     {%- if page.list_title -%}

@@ -2,8 +2,7 @@
 layout: post
 title:  "Python Practice"
 date:   2023-12-07 21:55 +0800
-categories: practice
-type: note
+categories: note
 subtype: python
 excerpt_separator: $$end_excerpt$$
 istop: true

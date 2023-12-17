@@ -45,7 +45,7 @@ layout: default
     </div>
     {% for subtype in type_subtypes.subtypes %}
     <div id="{{ subtype }}" class="tabcontent" {% if subtype == active_type %}style="display: block"{% endif %}>
-        {% assign filtered_posts = site.posts | where: 'type', page.type | where: 'subtype', subtype %}
+        {% assign filtered_posts = site.posts | where: 'categories', page.type | where: 'subtype', subtype %}
         {%- if filtered_posts.size > 0 -%}
         {%- if page.list_title -%}
         <h2 class="post-list-heading">{{ page.list_title }}</h2>

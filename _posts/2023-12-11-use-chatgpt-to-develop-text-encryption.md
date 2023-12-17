@@ -2,8 +2,7 @@
 layout: post
 title:  "Use ChatGPT to develop text encryption/decryption web pages"
 date:   2023-12-11 12:08 +0800
-categories: project
-type: tech blog
+categories: tech_blog
 istop: true
 ---
 With the help of ChatGPT, it's much easier to develop web pages. Here I'll show the flow to build a web page to encrypt and decrypt text under the assistant of ChatGPT [\[github link\]](https://github.com/violet-quartz/text_encryption_and_decryption/)\]. And this is the [ChatGPT shared link of this conversation](https://chat.openai.com/share/ed2f3d2b-d33c-4976-be35-e69d1f537f8f).

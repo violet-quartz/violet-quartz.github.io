@@ -2,8 +2,7 @@
 layout: post
 title:  "Tech books, tutorials and tools recommendation"
 date:   2023-12-11 12:08 +0800
-categories: recommendation
-type: tech blog
+categories: tech_blog
 istop: true
 ---
 A summary of useful and high-quality tech tools, websites and books in tech field. It's according to my experience and is under continuous update.
@@ -27,6 +26,7 @@ A summary of useful and high-quality tech tools, websites and books in tech fiel
 ## Software/System Design
 - [Software Design by Example](https://third-bit.com/sdxpy/): build small versions of tools that programmers use every day to show how experienced software designers think.
 - [Designing Data-Intensive Applications](https://learning.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/): focus on the data part in system design. The content is detailed and in-depth.
+- [System Design Preparation](https://github.com/shashank88/system_design): preparation links and resources for system design questions.
 - [Source for the book 500 Lines or Less](https://github.com/aosabook/500lines) whose each chapter consists of a walkthrough of a program that solves a canonical problem in software engineering in at most 500 source lines of code.
 
 ## Tech blogs
