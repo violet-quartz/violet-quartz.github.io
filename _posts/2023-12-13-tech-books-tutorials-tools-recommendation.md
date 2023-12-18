@@ -9,6 +9,7 @@ A summary of useful and high-quality tech tools, websites and books in tech fiel
 
 ## Tools
 - [colab](https://colab.google/): Colab is a hosted Jupyter Notebook service that requires no setup to use and provides free access to computing resources, including GPUs and TPUs. 
+- [gradio](https://www.gradio.app/): a fast way to demo with a friendly web interface so that anyone can use it anywhere. Gradio can be embedded in Python notebooks or presented as a webpage.
 - [CodePen](https://codepen.io/): build and test frontend code.
 - [jsfiddle](https://jsfiddle.net/): code playground where you can test your JavaScript, CSS, HTML or CoffeeScript code online.
 - [Whimsical](https://whimsical.com/): hub for visual collaboration, where combine diagramming and whiteboarding.
