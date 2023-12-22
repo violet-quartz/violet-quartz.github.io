@@ -140,9 +140,11 @@ Hi! My name is __mp_main__
 ```
 ## Synchronization
 ### Locks
-1. Primitive lock
+#### Primitive lock
+
 A primitive lock is in one of two states, "locked" or "unlocked". It's currently the lowest level synchronization primitive available. It can be released by different threads than the one acquire it(but not recommended).
-```Python
+
+```python
 import threading
 some_lock = threading.Lock()
 
@@ -150,7 +152,7 @@ some_lock.acquire()
 # do something...
 some_lock.release()
 ```
-Rember to release the lock if there is exception thrown.
+Remember to release the lock if there is exception thrown.
 ```python
 some_lock.acquire()
 try:
@@ -163,8 +165,10 @@ which is equivalent to:
 with some_lock:
     # do something...
 ```
-2. Try lock: Non-blocking acquire
+#### Try lock: Non-blocking acquire
+
 Non-blocking lock.acquire method for mutex. If the mutex is available, lock it and return TRUE. If the mutex is not available, immediately return FALSE.
+
 ```python
 import threading
 some_lock = threading.Lock()
@@ -175,8 +179,11 @@ if some_lock.acquire(blocking=False):
 if some_lock.acquire(blocking=True, timeout=1):
     # block for at most 1 second
 ```
-3. Reentrant lock
+
+#### Reentrant lock
+
 A reentrant lock is a synchronization primitive that may be acquired multiple times by the same thread. Internally, it uses the concepts of "owning thread" and "recursion level" in addition to the locked/unlocked state used by primitive locks. For reentrant lock, it can only be released by the thread which acquires it.
+
 ```python
 import threading
 
@@ -212,6 +219,7 @@ Condition variable, serves as a queue of threads waiting for a certain condition
 A monitor, protects section of code with mutual exclusion and provides ability for threads to wait until a condition has become true along with a mechanism to signal those waiting threads when their condition has been met.
 
 Conditional variable has three main operations: wait, signal/notify, broadcast/notifyall.
+
 ```python
 import threading
 from collections import deque
