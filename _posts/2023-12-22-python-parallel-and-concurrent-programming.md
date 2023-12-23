@@ -10,6 +10,30 @@ Parallel and concurrent programming are powerful tools to increase processing th
 faster and efficient applications. Here we'll summarize the main concepts of parallel and concurrent 
 programming and show how it works in Python.
 
+# Table of Contents
+- [Threads and Processes](#threads-and-processes)
+    - [Thread vs. Process](#thread-vs-process)
+    - [Concurrency vs. Parallelism](#concurrency-vs-parallelism)
+    - [Python GIL](#python-gil)
+    - [IO-bound task vs. CPU-bound task](#io-bound-task-vs-cpu-bound-task)
+    - [Thread](#thread)
+    - [Process](#process)
+- [Synchronization](#synchronization)
+    - [Locks](#locks)
+        - [Primitive lock](#primitive-lock)
+        - [Try lock:Non-blocking acquire](#try-lock-non-blocking-acquire)
+        - [Reentrant lock](#reentrant-lock)
+    - [Condition variables](#condition-variables)
+    - [Semaphores](#semaphores)
+    - [Event Objects](#event-objects)
+    - [Timer Objects](#timer-objects)
+    - [Barriers](#barriers)
+- [Asynchronous Tasks](#asynchronous-tasks)
+    - [Future](#future)
+    - [Thread Pool](#thread-pool)
+    - [Process Pool](#process-pool)
+- [External Libraries/Frameworks](#external-librariesframeworks)
+
 ## Threads and Processes
 ### Thread vs. Process
 A process is an executing program. Processes are isolated. Each process has its own Process Control Block, Stack, and Address Space.
@@ -139,6 +163,7 @@ Hi! My name is __mp_main__
 ...
 ```
 ## Synchronization
+Here we use thread-based parallelism as example.
 ### Locks
 #### Primitive lock
 
@@ -214,11 +239,11 @@ if __name__ == '__main__':
     print(f'red_cnt={red_cnt}, blue_cnt={blue_cnt}')
 ```
 ### Condition variables
-Condition variable, serves as a queue of threads waiting for a certain condition. The condition variable works with a mutex together to implement the higher level construct called a monitor.
+Spinning, which is busy waiting, repeatedly acquiring and releasing the lock to check for a certain condition to continue. To avoid this, we introduce condition variable.Condition variable, serves as a queue of threads waiting for a certain condition. The condition variable works with a mutex together to implement the higher level construct called a monitor.
 
 A monitor, protects section of code with mutual exclusion and provides ability for threads to wait until a condition has become true along with a mechanism to signal those waiting threads when their condition has been met.
 
-Conditional variable has three main operations: wait, signal/notify, broadcast/notifyall.
+Conditional variable has three main operations: wait, signal/notify, broadcast/notifyall. And it support context management protocol.
 
 ```python
 import threading
@@ -265,15 +290,179 @@ if __name__ == '__main__':
 Note: the notify() and notify_all() methods don't release the lock; this means that the thread or threads awakened will not return from their wait() call immediately, but only when the thread that called notify() or notify_all() finally relinquishes ownership of the lock.
 
 ### Semaphores
+Semaphore is one of the oldest synchronization primitives. Semaphore can be used by multiple threads at the same time. It manages an internal counter which is decremented by each acquire() call and incremented by each release() call. When acquire() finds the counter is zero, it blocks, waiting until some other thread calls release(). Semaphores also support the context management protocol.
 
+Semaphores are often used to gurard resources with limited capacity.
+
+```python
+import threading
+
+max_connections = 5
+semaphore = threading.Semaphore(value=max_connections)
+
+with semaphore:
+    conn = connectdb()
+    try:
+        # ... use connection ...
+    finally:
+        conn.close()
+```
 ### Event Objects
+Event is one of the simplest mechanisms for communication between threads: one thread signals an event and other threads wait for it.
+
+```python
+import threading
+import time
+
+elem_put = threading.Event()
+elem_get = threading.Event()
+q = []
+
+def produce():
+    for num in range(3):
+        elem_get.wait()
+        q.append(num)
+        print(f'Produce {num}')
+        elem_get.clear()
+        elem_put.set()
+
+def consume():
+    while elem_put.wait(timeout=0.5):
+        print(f'Consume {q[-1]}')
+        elem_put.clear()
+        elem_get.set()
+
+if __name__ == '__main__':
+    threading.Thread(target=produce).start()
+    threading.Thread(target=consume).start()
+    time.sleep(0.2)
+    elem_get.set()
+```
+Output:
+```
+Produce 0
+Consume 0
+Produce 1
+Consume 1
+Produce 2
+Consume 2
+```
 ### Timer Objects
+Timer class represents an action that should be run only after a certian amount of time has passed. Timer is a subclass of Thread.
+
+```python
+import threading
+
+def hello():
+    print('hello, thanks for waiting.')
+
+t = threading.Timer(interval=3, function=hello)
+t.start()
+# t.cancel() # Stop the timer and cancel the execution 
+# of the timer's action. This will only work if the timer
+# is still in its waiting stage.
+```
+
 ### Barriers
+Barrier is a synchronization primitive which prevents a group of threads from proceeding until enough threads have reached the barrier. Each of the threads tries to pass the barrier by calling the wait() method and will block until all of the threads have made their wait() calls. At this point, the threads are released simultaneously.
+
+The barrier can be reused any number of times for the same number of threads.
+
+```python
+import threading
+
+b = threading.Barrier(2, timeout=5)
+
+def start_server():
+    # do something ...
+    print('Server started')
+
+def server():
+    start_server()
+    b.wait()
+    while True:
+        connection = accept_connection()
+        process_server_connection(connection)
+
+def client():
+    b.wait()
+    while True:
+        connection = make_connection()
+        process_client_connection(connection)
+```
 
 ## Asynchronous Tasks
-### Thread Pool
-### Process Pool
+The concurrent.futures module provides a high-level interface for asynchronously executing callables. The asynchronous execution can be performed with threads, using ThreadPoolExecutor, or separate processes, using ProcessPoolExecutor. Both implement the same interface and support context management protocol.
+
+Use thread/process pool can reduce the complexity of management and the overhead in thread/process creation and destruction.
 ### Future
+The concurrent.futures.Future class encapsulates the asynchronous execution of a callable. It's a placeholder for a result that will be available later and a mechanism to access the result of an asynchronous operation. Future instances are created by Executor.submit().
+### Thread Pool
+
+```python
+import concurrent.futures 
+import threading
+
+def my_pow(num):
+    name = threading.current_thread().name
+    print(f'{name} compute pow(2, {num})')
+    return pow(2, num)
+
+if __name__ == '__main__':
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    futures = [pool.submit(my_pow, i) for i in range(6)]
+    for f in concurrent.futures.as_completed(futures):
+        print(f.result())
+    pool.shutdown() 
+```
+Output:
+```
+ThreadPoolExecutor-0_0 compute pow(2, 0)
+ThreadPoolExecutor-0_0 compute pow(2, 1)
+2
+1
+ThreadPoolExecutor-0_1 compute pow(2, 3)
+ThreadPoolExecutor-0_1 compute pow(2, 4)
+ThreadPoolExecutor-0_1 compute pow(2, 5)
+ThreadPoolExecutor-0_0 compute pow(2, 2)
+8
+16
+32
+4
+```
+### Process Pool
+
+```python
+import concurrent.futures 
+import os
+
+def my_pow(num):
+    name = os.getpid()
+    print(f'Process {name} compute pow(2, {num})')
+    return pow(2, num)
+
+if __name__ == '__main__':
+    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(my_pow, i) for i in range(10, 16)]
+        for f in concurrent.futures.as_completed(futures):
+            print(f.result())
+```
+Output:
+```
+Process 4304 compute pow(2, 10)
+Process 19172 compute pow(2, 11)
+Process 4304 compute pow(2, 12)
+1024
+2048
+Process 19172 compute pow(2, 13)
+Process 19172 compute pow(2, 15)
+Process 4304 compute pow(2, 14)
+4096
+8192
+32768
+16384
+```
+
 
 ## External Libraries/Frameworks
 - [asyncio](https://docs.python.org/3/library/asyncio.html): a library to write concurrent code using the async/await syntax.
