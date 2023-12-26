@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "近日有感，纪念苏西"
-date:   2023-12-06 18:03:22 +0800
+date:   2023-12-17 18:03:22 +0800
 categories: journal
 ---
 近日来，于家中小住。

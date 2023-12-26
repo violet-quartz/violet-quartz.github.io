@@ -1,6 +1,7 @@
 - type: note
   subtypes:
   - python
+  - web development
   - large language model
   - cplusplus
   - command line
