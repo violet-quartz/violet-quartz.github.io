@@ -4,6 +4,7 @@ title:  "Docker Tutorial"
 date:   2023-12-31 15:32 +0800
 categories: note
 subtype: MLOps/DevOps
+istop: true
 ---
 
 Docker is an open platform for developing, shipping, and running applications. It enables you to separate your applications from your infrastructure. With Docker, you can manage your infrastructure in the same ways you manage your applicaitons. Here we Introduce how to use docker and show its usage in ML/DL.

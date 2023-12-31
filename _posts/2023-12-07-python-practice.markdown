@@ -5,7 +5,6 @@ date:   2023-12-07 21:55 +0800
 categories: note
 subtype: python
 excerpt_separator: $$end_excerpt$$
-istop: true
 ---
 - Create virual environment for isolation
 ```console
