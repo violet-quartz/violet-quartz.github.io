@@ -5,7 +5,7 @@ date:   2023-12-24 12:08 +0800
 categories: tech_blog
 ---
 
-Here several topics about setting up machine learning/deep learning environemnt are discussed.
+Several topics about setting up machine learning/deep learning environemnt are discussed in this blog.
 
 ## Environment Management
 An environment is like an isolated workspace that has its own set of libraries and python versions. This isolation prevents conflicts between different projects requiring different library versions or enen python versions.
