@@ -9,7 +9,7 @@ excerpt_separator: $$end_excerpt$$
 - Create virual environment for isolation
 ```console
 > py -m venv your_env_name
-> venv your_env_name\Scripts\activate
+> your_env_name\Scripts\activate
 > deactivate
 ```
 $$end_excerpt$$
