@@ -18,6 +18,7 @@ A summary of useful and high-quality tech tools, websites and books in tech fiel
 ## Python
 - [Learning Python, 5th Edition](https://learning.oreilly.com/library/view/learning-python-5th/9781449355722/): this book provides a comprehensive, in-depth introduction to python language.
 - [Design patterns written in Python](https://github.com/faif/python-patterns): implement common design patterns in python.
+- [A good tutorial to learn Flask](https://flask.palletsprojects.com/en/3.0.x/tutorial/): it walk you through creating a basic blog application using flask, including test and deployment.
 
 ## C#
 - [Microsoft Learn](https://learn.microsoft.com/en-us/docs/): full documentations about Microsoft developer tools and technologies.
