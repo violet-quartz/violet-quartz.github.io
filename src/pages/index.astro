@@ -1,0 +1,73 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const recent = posts.slice(0, 5);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>{SITE_TITLE}</h1>
+			<p class="intro">{SITE_DESCRIPTION}</p>
+
+			<h2>Recent posts</h2>
+			<ul class="post-list">
+				{
+					recent.map((post) => (
+						<li>
+							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+							<FormattedDate date={post.data.pubDate} />
+							<p>{post.data.description}</p>
+						</li>
+					))
+				}
+			</ul>
+			{posts.length > recent.length && <a href="/blog">All posts →</a>}
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.intro {
+		color: rgb(var(--gray));
+	}
+	h2 {
+		font-size: 1.4em;
+		margin-top: 2.5rem;
+	}
+	.post-list {
+		list-style: none;
+		padding: 0;
+	}
+	.post-list li {
+		margin-bottom: 1.8rem;
+	}
+	.post-list a {
+		font-size: 1.1em;
+		font-weight: 700;
+	}
+	.post-list time {
+		display: block;
+		font-size: 0.85em;
+		color: rgb(var(--gray));
+	}
+	.post-list p {
+		margin: 0.3rem 0 0 0;
+		font-size: 0.95em;
+		color: rgb(var(--gray));
+	}
+</style>
