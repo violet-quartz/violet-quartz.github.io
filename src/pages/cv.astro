@@ -119,17 +119,20 @@ import { education, experience, profile, projects, skills } from '../data/cv';
 </html>
 
 <style>
-	/* Denser than the blog body copy — a CV is scanned, not read. */
+	/* Denser and sans — a CV is scanned, not read. */
 	.cv {
-		font-size: 17px;
-		line-height: 1.55;
+		font-family: var(--font-sans);
+		font-size: 15.5px;
+		line-height: 1.6;
 	}
 
 	.masthead {
 		margin-bottom: 2.5rem;
 	}
+	/* Keep the name in the site's serif so the CV still reads as the same site. */
 	.masthead h1 {
-		font-size: 2.2em;
+		font-family: var(--font-serif);
+		font-size: 2.1em;
 		margin-bottom: 0.15rem;
 	}
 	.tagline {
@@ -150,13 +153,14 @@ import { education, experience, profile, projects, skills } from '../data/cv';
 		margin-bottom: 2.2rem;
 	}
 	section h2 {
-		font-size: 0.82em;
+		font-size: 0.76em;
+		font-weight: 500;
 		text-transform: uppercase;
-		letter-spacing: 0.09em;
-		color: rgb(var(--gray));
-		border-bottom: 1px solid rgb(var(--gray-light));
-		padding-bottom: 0.35rem;
-		margin-bottom: 1.1rem;
+		letter-spacing: 0.13em;
+		color: var(--muted);
+		border-bottom: 1px solid var(--rule);
+		padding-bottom: 0.4rem;
+		margin: 0 0 1.1rem;
 	}
 
 	.entry {

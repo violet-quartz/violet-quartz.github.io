@@ -20,54 +20,105 @@ const recent = posts.slice(0, 5);
 	<body>
 		<Header />
 		<main>
-			<h1>{SITE_TITLE}</h1>
-			<p class="intro">{SITE_DESCRIPTION}</p>
+			<section class="masthead">
+				<h1>{SITE_TITLE}</h1>
+				<p class="intro">{SITE_DESCRIPTION}</p>
+			</section>
 
-			<h2>Recent posts</h2>
+			<h2 class="eyebrow">Recent posts</h2>
 			<ul class="post-list">
 				{
 					recent.map((post) => (
 						<li>
-							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
-							<FormattedDate date={post.data.pubDate} />
-							<p>{post.data.description}</p>
+							<a class="title" href={`/blog/${post.id}/`}>
+								{post.data.title}
+							</a>
+							<p class="meta">
+								<FormattedDate date={post.data.pubDate} />
+								{post.data.tags.map((tag) => (
+									<span class="tag">{tag}</span>
+								))}
+							</p>
+							<p class="summary">{post.data.description}</p>
 						</li>
 					))
 				}
 			</ul>
-			{posts.length > recent.length && <a href="/blog">All posts →</a>}
+			{
+				posts.length > recent.length && (
+					<a class="more" href="/blog">
+						All posts →
+					</a>
+				)
+			}
 		</main>
 		<Footer />
 	</body>
 </html>
 
 <style>
+	.masthead {
+		margin-bottom: 3.5rem;
+	}
+	.masthead h1 {
+		font-size: 2.1rem;
+	}
 	.intro {
-		color: rgb(var(--gray));
+		color: var(--muted);
+		margin: 0;
+		max-width: 32em;
 	}
-	h2 {
-		font-size: 1.4em;
-		margin-top: 2.5rem;
-	}
+
 	.post-list {
 		list-style: none;
 		padding: 0;
+		margin: 0;
 	}
 	.post-list li {
-		margin-bottom: 1.8rem;
+		margin: 0 0 2.2rem;
 	}
-	.post-list a {
-		font-size: 1.1em;
-		font-weight: 700;
+	.post-list li:last-child {
+		margin-bottom: 0;
 	}
-	.post-list time {
+	.title {
 		display: block;
-		font-size: 0.85em;
-		color: rgb(var(--gray));
+		font-size: 1.14rem;
+		font-weight: 600;
+		color: var(--ink);
+		line-height: 1.35;
+		text-decoration: none;
 	}
-	.post-list p {
-		margin: 0.3rem 0 0 0;
-		font-size: 0.95em;
-		color: rgb(var(--gray));
+	.title:hover {
+		color: var(--accent);
+	}
+	.meta {
+		margin: 0.3rem 0 0.45rem;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.55rem;
+	}
+	/* Middot separators drawn in CSS so the markup stays clean. */
+	.tag::before {
+		content: '·';
+		margin-right: 0.55rem;
+	}
+	.summary {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.92rem;
+		line-height: 1.65;
+	}
+
+	.more {
+		display: inline-block;
+		margin-top: 3rem;
+		font-family: var(--font-sans);
+		font-size: 0.78rem;
+		color: var(--muted);
+		text-decoration: none;
+	}
+	.more:hover {
+		color: var(--accent);
 	}
 </style>

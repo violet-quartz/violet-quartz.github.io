@@ -8,79 +8,113 @@ import Header from '../components/Header.astro';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
 ---
 
+<!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
 	</head>
 
 	<body>
 		<Header />
 		<main>
 			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
+				<header class="post-head">
+					<h1>{title}</h1>
+					<p class="meta">
+						<FormattedDate date={pubDate} />
+						{tags.map((tag) => <span class="tag">{tag}</span>)}
+					</p>
+					{
+						updatedDate && (
+							<p class="meta updated">
+								Updated <FormattedDate date={updatedDate} />
+							</p>
+						)
+					}
+				</header>
+
+				{
+					heroImage && (
+						<figure class="hero">
+							<Image width={1020} height={510} src={heroImage} alt="" />
+						</figure>
+					)
+				}
+
 				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
 					<slot />
 				</div>
 			</article>
+
+			<a class="back" href="/blog">← All posts</a>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.post-head {
+		margin-bottom: 2.6rem;
+		padding-bottom: 1.6rem;
+		border-bottom: 1px solid var(--rule);
+	}
+	.post-head h1 {
+		font-size: 2rem;
+		margin: 0 0 0.7rem;
+	}
+	.meta {
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.55rem;
+	}
+	.tag::before {
+		content: '·';
+		margin-right: 0.55rem;
+	}
+	.updated {
+		margin-top: 0.25rem;
+		font-style: italic;
+	}
+
+	.hero {
+		margin: 0 0 2.6rem;
+	}
+	.hero :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-radius: 6px;
+	}
+
+	/* First heading of a post shouldn't push extra space under the title rule. */
+	.prose :global(> :first-child) {
+		margin-top: 0;
+	}
+
+	.back {
+		display: inline-block;
+		margin-top: 4rem;
+		padding-top: 1.6rem;
+		border-top: 1px solid var(--rule);
+		width: 100%;
+		box-sizing: border-box;
+		font-family: var(--font-sans);
+		font-size: 0.78rem;
+		color: var(--muted);
+		text-decoration: none;
+	}
+	.back:hover {
+		color: var(--accent);
+	}
+
+	@media (max-width: 720px) {
+		.post-head h1 {
+			font-size: 1.75rem;
+		}
+	}
+</style>

@@ -22,28 +22,34 @@ export default defineConfig({
 			wrap: false,
 		},
 	},
+	// Downloaded and self-hosted at build time — no runtime request to Google.
+	// CJK families sit before the generic fallback so Chinese glyphs land on a
+	// real serif/sans instead of whatever `serif` happens to be.
 	fonts: [
 		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
-			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
+			provider: fontProviders.google(),
+			name: 'Source Serif 4',
+			cssVariable: '--font-serif',
+			weights: [400, 600],
+			styles: ['normal', 'italic'],
+			subsets: ['latin', 'latin-ext'],
+			fallbacks: ['Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Georgia', 'serif'],
+		},
+		{
+			provider: fontProviders.google(),
+			name: 'Inter',
+			cssVariable: '--font-sans',
+			weights: [400, 500, 600],
+			subsets: ['latin', 'latin-ext'],
+			fallbacks: ['PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'system-ui', 'sans-serif'],
+		},
+		{
+			provider: fontProviders.google(),
+			name: 'JetBrains Mono',
+			cssVariable: '--font-mono',
+			weights: [400],
+			subsets: ['latin'],
+			fallbacks: ['ui-monospace', 'SFMono-Regular', 'monospace'],
 		},
 	],
 });

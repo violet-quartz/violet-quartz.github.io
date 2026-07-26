@@ -34,7 +34,11 @@ const { title, description, image = FallbackImage } = Astro.props;
 />
 <meta name="generator" content={Astro.generator} />
 
-<Font cssVariable="--font-atkinson" preload />
+<!-- No preload: `preload` covers every variant of a family (6 files for the serif
+	 alone). Astro emits metric-matched fallbacks, so display:swap barely shifts. -->
+<Font cssVariable="--font-serif" />
+<Font cssVariable="--font-sans" />
+<Font cssVariable="--font-mono" />
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />

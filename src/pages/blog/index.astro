@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
@@ -7,108 +6,109 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
-const posts = (await getCollection('blog')).sort(
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+// Posts are already newest-first, so walking them in order yields years in order too.
+const byYear = posts.reduce<Map<number, typeof posts>>((acc, post) => {
+	const year = post.data.pubDate.getFullYear();
+	if (!acc.has(year)) acc.set(year, []);
+	acc.get(year)!.push(post);
+	return acc;
+}, new Map());
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
+		<BaseHead title={`Blog — ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
 		<Header />
 		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.id}/`}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
-									)}
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
+			<h1>Writing</h1>
+			<p class="intro">{SITE_DESCRIPTION}</p>
+
+			{
+				[...byYear].map(([year, yearPosts]) => (
+					<section class="year">
+						<h2 class="eyebrow">{year}</h2>
+						<ul>
+							{yearPosts.map((post) => (
+								<li>
+									<a class="title" href={`/blog/${post.id}/`}>
+										{post.data.title}
+									</a>
+									<p class="meta">
 										<FormattedDate date={post.data.pubDate} />
+										{post.data.tags.map((tag) => (
+											<span class="tag">{tag}</span>
+										))}
 									</p>
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
+									<p class="summary">{post.data.description}</p>
+								</li>
+							))}
+						</ul>
+					</section>
+				))
+			}
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.intro {
+		color: var(--muted);
+		margin: 0 0 3.5rem;
+		max-width: 32em;
+	}
+
+	.year {
+		margin-bottom: 3.2rem;
+	}
+	.year:last-child {
+		margin-bottom: 0;
+	}
+	.year ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.year li {
+		margin: 0 0 2.2rem;
+	}
+	.year li:last-child {
+		margin-bottom: 0;
+	}
+
+	.title {
+		display: block;
+		font-size: 1.14rem;
+		font-weight: 600;
+		color: var(--ink);
+		line-height: 1.35;
+		text-decoration: none;
+	}
+	.title:hover {
+		color: var(--accent);
+	}
+	.meta {
+		margin: 0.3rem 0 0.45rem;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.55rem;
+	}
+	.tag::before {
+		content: '·';
+		margin-right: 0.55rem;
+	}
+	.summary {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.92rem;
+		line-height: 1.65;
+	}
+</style>

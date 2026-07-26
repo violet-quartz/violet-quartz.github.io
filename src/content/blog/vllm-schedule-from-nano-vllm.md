@@ -3,7 +3,6 @@ title: '对照 Nano-vLLM 实现：读懂 vLLM 调度'
 description: '先用轮次快照把 nano-vllm 的调度看透，再对照 vLLM V1 的 schedule()，讲清混批、chunked prefill、token 预算与抢占这几处关键分歧。'
 pubDate: '2026-07-26'
 tags: ['llm', 'inference', 'vllm', 'paged-attention', 'schedule']
-draft: true
 ---
 
 [Nano-vLLM](https://github.com/GeeeekExplorer/nano-vllm) 是一个轻量级的大语言模型（LLM）推理引擎实现，代码非常简洁，仅有 1200 行的 Python 和 Triton 代码，旨在从头开始重建著名推理框架 vLLM 的核心架构。它的主要定位并非替代生产级的 vLLM，而是作为一个教育和学习工具，帮助开发者深入理解 vLLM 推理引擎的内部工作原理。
