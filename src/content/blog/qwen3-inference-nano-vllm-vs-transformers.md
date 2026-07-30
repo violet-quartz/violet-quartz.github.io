@@ -50,7 +50,7 @@ $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\rig
 
 Q、K、V 各自的头数并不要求相等 —— Qwen3 用的 GQA 正是让 K、V 的头数比 Q 少，多个 Q 头共享同一组 K、V，下一节会给出具体的头数和维度。
 
-### 1.3 decoder-onlly 架构
+### 1.3 decoder-only 架构
 
 decoder-only block 堆叠 N 层，前面接一个 embedding 把 token id 转成向量，后面接一个 norm 和一个线性层（lm_head）把向量转回词表上的分数（logits）。整个前向过程就是：
 
@@ -88,7 +88,7 @@ torch_dtype        bfloat16
 
 两个数值决定了这个模型的性格：`32 / 8 = 4`，即 **GQA 4:1**，每 4 个 Q head 共享一组 KV head；以及 `tie_word_embeddings: false`，意味着 `lm_head` 是一份**独立**的 `[151936, 4096]` 矩阵，不与 embedding 共享权重。
 
-### 2.1  模型结构
+### 2.1 模型结构
 
 下图中 `T` 是本次前向的 token 总数。右侧一列标的是**权重矩阵形状**（PyTorch 的 `[out_features, in_features]` 约定）。
 
@@ -270,8 +270,8 @@ class Qwen3ForCausalLM(Qwen3PreTrainedModel, GenerationMixin):
 从 `Qwen3ForCausalLM` 的定义上可以看出一些差异：
 
 - nano-vllm 放弃了训练功能，只支持推理，同时在返回值中没有 `output_attentions`、`output_hidden_states` 这类结构化返回，是只关注推理基本功能的版本。
-- nano-vllm 的 `forward` 和 `compute_logits` 被拆成了两步，这样做是为了让 run_model 能在两者之间插入「decode 走重放图」这个动作， 在录制图时，由于 lm_head 存储占用比较大，在录制图时，只把 `self.model(...)` 这一段（embed → 36 层 → norm）录进了图在走 decode 的图重放路径时，只把 `self.model(...)` 这一段（embed → 36 层 → norm）录进了图，lm_head 留在图外单独调用，而 decode 走重放图路径是为了节省推理时间。
-- transformers 用 `_tp_plan`、`_pp_plan`、`_fsdp_plan` 三个类属性声明 lm_head 在张量并行、流水线并行、FSDP 下各自该怎么切分——模型定义和并行策略是分离的。nano-vllm 没有这类声明，并行方式直接编码在用的是哪个层类（`ParallelLMHead` 本身就是并行的）里（第 4 节详细对比）。
+- nano-vllm 的 `forward` 和 `compute_logits` 被拆成了两步，这样做是为了让 run_model 能在两者之间插入「decode 走重放图」这个动作。在录制图时，由于 `lm_head` 参数占用较大，图里只录入 `self.model(...)` 这一段（embed → 36 层 → norm），`lm_head` 留在图外单独调用；decode 的重放路径也是基于这一设计，以节省推理时间。
+- transformers 用 `_tp_plan`、`_pp_plan`、`_fsdp_plan` 三个类属性声明 `lm_head` 在张量并行、流水线并行、FSDP 下各自该怎么切分——模型定义和并行策略是分离的。nano-vllm 没有这类声明，并行方式直接编码在用的是哪个层类（`ParallelLMHead` 本身就是并行的）里（第 4 节详细对比）。
 
 
 我们再往里一层，看一下核心模块 `Qwen3Model`：
