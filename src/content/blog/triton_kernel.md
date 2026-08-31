@@ -116,6 +116,16 @@ offsets = tl.arange(0, BLOCK_SIZE)
 x = tl.where(offsets == idx, value, x)   # idx 处取 value，其余保持原 x
 ```
 
+### 1.5 内部 API 判别
+
+```python
+inspect.getdoc(fn)     # None → 大概率是内部工具，版本升级可能变
+inspect.signature(fn)  # 查参数，比翻文档快
+```
+
+常见的内部 API：`kernel.warmup`、`_init_handles`、`n_regs`、`metadata.shared`、`testing.Mark`、`testing.set_gpu_clock`（且带 A100 硬编码）。
+
+
 ## 2 如何优化 Triton 算子
 
 Triton 算子的优化遵循一下工作顺序，重新测后，可以继续判断瓶颈类型、进一步优化，形成循环。
@@ -151,6 +161,8 @@ $$ |got - ref| \le atol + rtol \times |ref| $$
 - 误差随规模缓慢增长 → 正常的浮点累积
 - 某几个位置差得离谱、或出现 nan/inf → 真 bug
 
+**累加器永远用 fp32**，fp16 累加在 K 稍大时明显掉精度。
+
 ### 2.2 如何测量性能
 
 ```python
@@ -166,5 +178,197 @@ ms = triton.testing.do_bench(lambda: kernel[grid](x, y, n), return_mode='median'
 
 ### 2.3 如何判断瓶颈并进行优化
 
+#### 2.3.1 获得硬件特性
 
+```python
+from triton.runtime import driver
+props = driver.active.utils.get_device_properties(0)
+print(props)
+# {'max_shared_mem': 101376, 'max_num_regs': 65536, 'multiprocessor_count': 128, 'warpSize': 32, 
+# 'sm_clock_rate': 2520000, 'mem_clock_rate': 10501000, 'mem_bus_width': 384}
+```
+
+通过阅读架构白皮书以及在机器上运行代码的方式，获得机器的硬件特性，这对我们之后的估算与优化有参考意义。
+
+
+#### 2.3.2 首先判断是 memory-bound 还是 compute-bound （todo：update）
+
+kernel 跑的慢，有两类瓶颈：
+
+- memory-bound（访存受限）：计算很少，但要搬很多数据。GPU 的计算单元大部分时间在等数据从显存运过来，算力闲着。瓶颈是显存带宽
+- compute-bound（计算受限）：数据不多，但要做大量运算。数据早就到位了，GPU 的计算单元在满负荷算。瓶颈是算力（FLOPS）。
+
+如何判断是哪一类瓶颈，可以使用 Roofline 模型，计算算数强度与硬件的 ridge point（脊点） 进行比较：
+
+**算术强度** = FLOP 数（做多少次浮点运算） / 字节数（搬多少数据）
+
+它衡量的是“每从显存搬一字节数据，能做多少次计算”。强度低，则搬的多、算得少，是 memory-bound；
+强度高，则算的多、搬的少，是 compute-bound。**ridge point（脊点）** 是硬件的一个固有分界值 = 硬件峰值算力 ÷ 峰值带宽，
+算数强度 < ridge point 是 memory-bound, 算数强度 > ridge point 是 compute-bound。
+
+| 类型 | 特征 | 优化方向 |
+|---|---|---|
+| **memory-bound** | 算术强度低于 ridge point。elementwise、norm、softmax、绝大多数算子 | **减少 DRAM 往返** = fusion |
+| **compute-bound** | matmul、attention | **喂饱 tensor core** = tiling、流水、L2 复用 |
+
+用 Nsight Compute（ncu），它会直接告诉你 kernel 是 memory 还是 compute bound、达到峰值的百分比、以及 roofline 图。
+但我们还是了解一下计算的方法，方便我们自己粗判。
+
+**如何计算算数强度？**
+
+以 softmax 算子为例，设输入是一个长度为 N 的 **fp32** 向量 $x$（比如注意力里的一行 logits），softmax 定义（带数值稳定的减最大值版本，实际都这么实现）：
+
+$$m = \max_i(x_i), \quad y_i = \frac{e^{x_i - m}}{\sum_j e^{x_j - m}}$$
+
+第一步：数 FLOP
+
+softmax 分几个阶段，逐个数每个元素贡献多少次运算：
+
+1. **求最大值 $m = \max(x_i)$**
+N 个元素求 max，需要 N−1 次比较。比较通常按 1 次运算算 → 约 **N** 次。
+
+2. **算 $e^{x_i - m}$**
+每个元素：1 次减法（$x_i - m$）+ 1 次 exp。
+这里有个关键点：**exp 不是 1 次 FLOP**。它是超越函数，硬件上要用多条指令近似（多项式展开等），习惯上按较大的等效 FLOP 计（常见按 ~10 FLOP 估，具体看实现）。为了演示，先记作每次 exp 为 $c$ 次运算。
+每元素：$1 + c$，共 N 个 → **$N(1+c)$**
+
+3. **求和 $\sum_j e^{x_j - m}$**
+N 个数相加，N−1 次加法 → 约 **N**
+
+4. **除法 $y_i = (\cdot)/\text{sum}$**
+每元素 1 次除法，共 **N**（实际常优化成算一次倒数再乘，但量级不变）
+
+5. **合计：**
+
+$$\text{FLOP} \approx N + N(1+c) + N + N = N(3 + 1 + c) = N(4 + c)$$
+
+如果把 exp 粗略按 $c \approx 10$ 估：
+
+$$\text{FLOP} \approx N \times 14 = 14N$$
+
+即使把 exp 当成 1（最保守），也就 $5N$。**量级上是几倍到十几倍 N。**
+
+第二步：数字节
+
+看数据进出显存多少次：
+
+- 读 x：一次，4N 字节
+- 写 y：一次，4N 字节
+
+$$\text{字节} \approx 4N + 4N = 8N$$
+
+第三步： 计算算数强度
+
+取 exp≈10：
+
+$$\text{算术强度} = \frac{14N}{8N} = \frac{14}{8} \approx 1.75 \text{ FLOP/Byte}$$
+
+
+**如何估算 ridge point？**
+
+关于峰值算力，可以通过查厂商 datasheet 或架构白皮书获得，但理论峰值实际达不到，真正做 roofline 时更该用实测可达峰值，跑一个大的 matmul（用 cuBLAS，比如 torch.matmul 两个大方阵），算 FLOP ÷ 耗时。白皮书中会有 tensor 算力和 non-tensor 算力，选你这个 kernel 实际会用到的那套单元的算力。
+
+关于峰值带宽，可以通过查厂商的规格得出（Memory Bandwidth），而实测带宽只能达到理论带宽的 70%-90%，可以使用官方工具 bandwidthTest 或者自己写一个纯拷贝 kernel 实测带宽。
+
+两者相除，就得到了 ridge point。
+
+#### 2.3.3 计算带宽百分比
+
+```python
+ms = triton.testing.do_bench(lambda: kernel_call(), return_mode='median') # 单次执行的 ms 数
+gbps = bytes_moved * 1e-9 / (ms * 1e-3)
+print(f"{gbps:.0f} GB/s = {gbps/REF_GBPS:.0%}")   # REF_GBPS：硬件峰值带宽
+```
+这里的 bytes_moved 可以是理论上的最小值：输入字节数 + 输出字节数，也可以是实际的 DRAM 访存量。
+
+| 指标 | bytes_moved | 用途 |
+|---|---|---|
+| **有效吞吐** | 理论最小流量 | 同样的理论最小流量，带宽百分比高的算的更快，用于横向比较不同的实现 |
+| **实际 DRAM 带宽** | 真实访存量 | 判断某实现还有没有空间 |
+
+
+我们可以计算有效吞吐，然后除以峰值带宽，≥80% 就收工，50~80% 调参，<50% 往下查。
+
+
+#### 2.3.4 Fusion：解决 memory-bound 问题
+
+`y = relu(x*a+b)` 在 PyTorch 里是三次 kernel 启动、6 次 DRAM 访问；融合成一个 kernel 后是 2 次。**访存降到 1/3，速度快 3 倍。**
+
+寄存器/shared memory 比 DRAM 快一两个数量级，数据一旦读进寄存器，在里面做多少次运算几乎免费。
+
+
+#### 2.3.5 检查寄存器 spill
+
+```python
+k = kernel.warmup(..., grid=(1,))
+k._init_handles()
+# n_regs：每个 thread（线程）用的寄存器数量
+# n_spills: 每个 thread 的寄存器溢出数量
+# smem：每个 block 用的 shared memory 字节数
+print(f"n_regs={k.n_regs}, n_spills={k.n_spills}, smem={k.metadata.shared}")
+```
+**`n_spills > 0` 是性能灾难**——寄存器装不下，溢出到 local memory（其实在显存里）。
+
+补充一下寄存器和 shared memory 分别放什么：
+- 寄存器：单个线程私有，存放索引、临时变量、累加器、刚 load 的值，编译器自动管理。
+- shared memory：整个 block 共享，存放待复用的数据块 (A/B tile)、线程间交换的中间量。
+
+#### 2.3.6 occupancy
+
+occupancy（占用率）的含义：一个 SM 上能同时驻留多少个 block。
+
+```python
+# 按寄存器算能放几个 block
+occupancy = NUM_REGS // (n_regs * WARP_SIZE * num_warps)
+# 按 shared memory 算能放几个 block，取更小值
+occupancy = min(occupancy, SIZE_SMEM // size_smem)
+```
+
+GPU 在等待一条访存指令时，会切换到另一个已经就绪的 warp/block 去执行，让计算单元不空闲，
+这种用大量可执行单元来填满等待空隙的机制，叫做 latency hiding（延迟隐藏），需要 SM 中有足够多的 block/warp 可以切换。
+
+所以当 occupancy 高的时候，访存延迟容易被计算填满，使硬件利用率增加，但是 occupancy 过高的话，意味着一个 SM 上的 block 更多，
+那么每个 block、每个线程能分到的寄存器更少，寄存器不够的话，出发 spill，得不偿失。occupancy 需要设一个足够藏延迟又不出发 spill 的值。
+
+
+#### 2.3.7 L2 复用（compute-bound 专属）
+
+matmul 的 swizzle：把线性 pid 重排成"分组列主序"，让同时活跃的 program 覆盖一个接近**方形**的输出区域。
+
+原理：同样数量的输出 tile，排成方块比排成长条需要的输入数据少得多（周长最小）。9×9 网格算 9 个 tile，行主序要读 90 个 block，3×3 分组只要 54 个。
+
+#### 2.3.8 参数调优：交给 autotune
+
+`BLOCK_SIZE`、`num_warps`、`num_stages` 的最优值**推不出来**，受寄存器压力、occupancy、L2 命中率的耦合影响，还随硬件和 shape 变化。
+
+```python
+@triton.autotune(configs=[...], key=['M', 'N', 'K'])
+```
+
+粗略直觉（仅供构造 config 列表）：
+
+- `num_warps`：`BLOCK_SIZE` 大就配大的。512→2，2048→4，8192→8
+- `num_stages`：shared memory 决定上限。4090（99KB）扫 2~3，H100（228KB）才扫 4~5
+- `GROUP_SIZE_M`：8 是常见默认值
+
+#### 2.3.9 访存合并
+
+GPU 访问显存不是一个字节一个字节读的，而是一次搬一整段连续的内存（一个 transaction/事务，通常 32、64 或 128 字节），
+哪怕你只要其中 4 个字节（一个 fp32），硬件也必须把整段 128 字节都搬回来。每搬回来一段内存，里面真正被用到的数据越多越好。
+
+而 GPU 又是以 warp（32 个线程）为单位锁步执行的——一个 warp 里 32 个线程会同时发出各自的 tl.load。如果这32个线程要读的地址连续（线程 0 读地址 0，线程 1 读地址 4，线程 2 读地址 8……fp32 步长 4），这 32 次请求正好落在同一段连续内存里，硬件打包成一次（或极少数几次）内存事务就全取回来了。这叫合并访存（coalesced），有效带宽高。
+
+所以尽量让 **stride=1 的那一维是连续维，访存效率最高。** 让 block 的最内层沿着这个方向展开，相邻线程读相邻地址，硬件可以把多次请求打包成一次事务。
+
+对于非连续的输入，要么传 stride 让 kernel 处理（省拷贝，访存可能不合并），或者 `.contiguous()` 物化（多一次拷贝，后续高效）。matmul 对 B 通常选后者，elementwise 通常选前者。
+
+#### 2.3.10 算法层面的重构
+
+online softmax， FlashAttention 核心技巧。
+
+
+#### 2.3.11 看看 torch 编译器做到了什么程度
+
+
+#### 2.3.12 查看 TTGIR
 
