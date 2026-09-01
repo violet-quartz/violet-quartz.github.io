@@ -1,8 +1,8 @@
 ---
 title: 'Triton 学习笔记'
-description: ''
+description: '本文介绍了如何编写 Triton 算子，列出了 Triton 的关键语法，然后介绍了 Triton 算子的优化流程，包括如何判断算子的正确性、如何准确测量性能以及如何识别瓶颈也优化。'
 pubDate: '2026-08-30'
-tags: ['triton', 'gpu', 'kernel']
+tags: ['triton', 'gpu', 'kernel', 'optimization', 'cuda', 'performance']
 ---
 
 Triton 是一门用于编写 GPU kernel 的编程语言和编译器，由 OpenAI 主导开发。传统上写高性能 GPU kernel 要用 CUDA C++，手动管理线程、block、shared memory、内存合并访问、寄存器分配等，开发难度较高。Triton 的目标是用类似 Python 的语法，来写出接近 CUDA 性能的 kernel。
@@ -191,7 +191,7 @@ print(props)
 通过阅读架构白皮书以及在机器上运行代码的方式，获得机器的硬件特性，这对我们之后的估算与优化有参考意义。
 
 
-#### 2.3.2 首先判断是 memory-bound 还是 compute-bound （todo：update）
+#### 2.3.2 首先判断是 memory-bound 还是 compute-bound
 
 kernel 跑的慢，有两类瓶颈：
 
@@ -364,11 +364,81 @@ GPU 访问显存不是一个字节一个字节读的，而是一次搬一整段�
 
 #### 2.3.10 算法层面的重构
 
-online softmax， FlashAttention 核心技巧。
-
+比如 FlashAttention 这个算子，使用 online softmax 只扫一趟数据，一边流式地读入、一边维护结果，不需要预先知道全局的 max 和 sum。
+对于 S×S 的注意力大矩阵从头到尾没有完整地存在过——每个小块算完、累进结果就扔了，永远不落显存。显存占用从 O(S²) 降到 O(S)。
 
 #### 2.3.11 看看 torch 编译器做到了什么程度
 
+在装了 torch+triton、能连上加速器的机器上:
+
+```bash
+TORCH_LOGS="output_code" python your_script.py  2>&1 | tee dump.log
+```
+
+或者想要生成文件，而不是一坨 stdout：
+
+```bash
+TORCH_COMPILE_DEBUG=1 python your_script.py 
+```
+会在当前目录下生成 torch_compile_debug/run_.../output_code.py,可以直接拿编辑器打开。
+
+`torch.compile` 生成的就是 Triton 代码。**如果它已经融合得很好，手写优化空间不大。** 这也是极好的学习素材。
+
 
 #### 2.3.12 查看 TTGIR
+
+你的 Python kernel(@triton.jit)
+   ↓
+TTIR   (Triton IR)          ← 硬件无关,描述"算什么"
+   ↓
+TTGIR  (Triton GPU IR)      ← 加入 GPU 硬件信息,描述"怎么在 GPU 上摆布"
+   ↓
+LLVM IR
+   ↓
+PTX (NVIDIA) / 汇编
+   ↓
+机器码(SASS)
+
+TTGIR（这一层）：硬件相关。它在 TTIR 的基础上，加入了数据布局（layout）、线程/warp 如何分工、用不用 shared memory、tensor core 怎么调度等 GPU 专属的决策。
+它是"怎么把这个计算高效映射到 GPU 硬件"的蓝图。
+
+```bash
+TRITON_ALWAYS_COMPILE=1 TRITON_KERNEL_DUMP=1 TRITON_DUMP_DIR=./dump python bench.py
+D=$(ls -dt dump/*/ | head -1)
+grep -cE "convert_layout|local_alloc" $D/*.ttgir   # layout 转换的真实数量
+grep -c  "tt.reduce"                  $D/*.ttgir   # 规约次数，多了就是机会
+grep -c  "async_copy"                 $D/*.ttgir   # 流水生效没
+grep     "^#blocked\|^#mma\|^#shared" $D/*.ttgir   # 布局决策
+grep     "tt.dot"                     $D/*.ttgir   # 确认走了 tensor core
+```
+
+上面的代码展示了如何获取 TTGIR，以及一般我们关注的 TTGIR 内容。
+
+关于布局决策，我们看一个例子
+
+```mlir
+#blocked = #ttg.blocked<{sizePerThread = [1, 8],
+                         threadsPerWarp = [8, 4],
+                         warpsPerCTA   = [4, 1],
+                         order         = [1, 0]}>
+```
+
+
+| 字段 | 含义 |
+|---|---|
+| `sizePerThread` | 每个线程持有多大一块（`[1,8]` = 沿 dim1 连续 8 个 → 编译器在准备向量化访存）|
+| `threadsPerWarp` | warp 里 32 个线程怎么排（`[8,4]` = 8 行 × 4 列，乘积必须是 32）|
+| `warpsPerCTA` | warp 怎么排（`[4,1]` = 4 个 warp 竖着叠）|
+| `order` | 哪一维变化最快 |
+
+**覆盖的 tile 大小 = 每维三个数相乘**：dim0 是 `1×8×4=32`，dim1 是 `8×4×1=32`，所以这是一个 `[32,32]` 的 tile。
+
+layout 有几种类型：
+
+- `#blocked` — 普通的访存和 elementwise
+- `#mma` — `tl.dot` 的输出，形状由 tensor core 指令决定
+- `#dot_op` — `tl.dot` 的输入操作数
+- `#shared` — shared memory 里的布局，**含 swizzle 信息**（bank conflict 的规避策略就在这里）
+
+
 
