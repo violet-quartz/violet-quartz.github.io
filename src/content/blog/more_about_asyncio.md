@@ -146,6 +146,8 @@ worker 6 开始
 
 对于 "阻塞但不太耗 CPU"的任务，可以通过 loop.run_in_executor 丢到线程池中。
 
+可以参考代码 [cpu_bound_vs_blocking_fetch.py](https://github.com/violet-quartz/code-snippets/blob/main/asyncio/cpu_bound_vs_blocking_fetch.py)
+
 | 场景 | 推荐 | 原因 |
 |---|---|---|
 | 调用同步的阻塞 I/O 库（如某些数据库驱动、`requests`） | 线程池 | 线程在等待 I/O 时会释放 GIL，其他线程/主循环可以运行 |
