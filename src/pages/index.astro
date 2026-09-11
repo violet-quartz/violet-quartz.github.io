@@ -22,7 +22,10 @@ const recent = posts.slice(0, 5);
 		<main>
 			<section class="masthead">
 				<h1>{SITE_TITLE}</h1>
-				<p class="intro">{SITE_DESCRIPTION}</p>
+				<!-- One-paragraph bio; edit freely. SITE_DESCRIPTION is used for meta/RSS and the /blog page. -->
+				<p class="about">
+					Hi，我是 Flora，软件工程师，瑜伽与冥想习练者（曾赴印度度深造）。这里记录我在技术上的学习和探索。
+				</p>
 			</section>
 
 			<h2 class="eyebrow">Recent posts</h2>
@@ -61,12 +64,11 @@ const recent = posts.slice(0, 5);
 		margin-bottom: 3rem;
 	}
 	.masthead h1 {
-		margin-bottom: 0.4rem;
+		margin-bottom: 0.8rem;
 	}
-	.intro {
-		color: var(--muted);
+	.about {
+		max-width: 40em;
 		margin: 0;
-		max-width: 32em;
 	}
 
 	.post-list {

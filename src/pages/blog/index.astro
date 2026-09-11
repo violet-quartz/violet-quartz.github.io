@@ -26,13 +26,15 @@ const byCategory = [...categories.map((c) => c.name), uncategorized]
 	<body>
 		<Header />
 		<main>
-			<h1>Writing</h1>
+			<h1>Articles</h1>
 			<p class="intro">{SITE_DESCRIPTION}</p>
 
 			{
 				byCategory.map(([name, groupPosts]) => (
-					<section class="group">
-						<h2 class="eyebrow">{name}</h2>
+					<details class="group">
+						<summary>
+							<h2 class="eyebrow">{name}</h2>
+						</summary>
 						<ul>
 							{groupPosts.map((post) => (
 								<li>
@@ -49,7 +51,7 @@ const byCategory = [...categories.map((c) => c.name), uncategorized]
 								</li>
 							))}
 						</ul>
-					</section>
+					</details>
 				))
 			}
 		</main>
@@ -64,11 +66,45 @@ const byCategory = [...categories.map((c) => c.name), uncategorized]
 		max-width: 36em;
 	}
 
+	/* Each category folds; the heading doubles as the toggle. */
 	.group {
-		margin-bottom: 2.8rem;
+		margin-bottom: 1.2rem;
 	}
-	.group:last-child {
+	.group[open] {
+		margin-bottom: 2.6rem;
+	}
+	.group summary {
+		list-style: none;
+		cursor: pointer;
+	}
+	.group summary::-webkit-details-marker {
+		display: none;
+	}
+	.group .eyebrow {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
 		margin-bottom: 0;
+	}
+	.group[open] .eyebrow {
+		margin-bottom: 1.1rem;
+	}
+	/* Chevron: points right when closed, down when open. */
+	.group .eyebrow::before {
+		content: '';
+		width: 0.45em;
+		height: 0.45em;
+		border-right: 2px solid var(--muted);
+		border-bottom: 2px solid var(--muted);
+		transform: rotate(-45deg);
+		transition: transform 0.15s ease;
+		flex: none;
+	}
+	.group[open] .eyebrow::before {
+		transform: rotate(45deg);
+	}
+	.group summary:hover .eyebrow {
+		color: var(--accent);
 	}
 	.group ul {
 		list-style: none;
