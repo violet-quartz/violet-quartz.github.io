@@ -1,0 +1,163 @@
+/* Print stylesheet for scripts/cv-pdf.mjs. A4, dense but breathable, Chinese
+   text on the system CJK sans. Colours echo the site's warm palette. */
+
+@page {
+	size: A4;
+	margin: 11mm 13mm 12mm;
+}
+
+:root {
+	--ink: #1b1b18;
+	--text: #2c2c28;
+	--muted: #6f6e66;
+	--rule: #d9d5cb;
+	--accent: #9c5b3c;
+	--code-bg: #f2f0ea;
+}
+
+/* Sized so the full CV lands on two A4 pages. */
+html {
+	font-size: 9.3pt;
+}
+
+body {
+	margin: 0;
+	color: var(--text);
+	font-family:
+		-apple-system,
+		'PingFang SC',
+		'Hiragino Sans GB',
+		'Helvetica Neue',
+		'Noto Sans CJK SC',
+		'Microsoft YaHei',
+		sans-serif;
+	line-height: 1.4;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+strong {
+	color: var(--ink);
+	font-weight: 600;
+}
+
+code {
+	font-family: Menlo, 'JetBrains Mono', ui-monospace, monospace;
+	font-size: 0.9em;
+	background: var(--code-bg);
+	padding: 0 0.25em;
+	border-radius: 2px;
+}
+
+/* Section separators in the source are redundant with the h2 rules. */
+hr {
+	display: none;
+}
+
+/* ---------- Masthead ---------- */
+
+h1 {
+	margin: 0 0 0.1em;
+	color: var(--ink);
+	font-size: 2.15em;
+	font-weight: 700;
+	line-height: 1.15;
+	letter-spacing: 0.02em;
+}
+
+p.tagline {
+	margin: 0;
+	color: var(--ink);
+	font-size: 1.05em;
+	font-weight: 500;
+}
+
+p.contact {
+	margin: 0.15em 0 0;
+	color: var(--muted);
+	font-size: 0.93em;
+}
+
+/* ---------- Sections ---------- */
+
+h2 {
+	margin: 1.2em 0 0.45em;
+	padding-bottom: 0.2em;
+	border-bottom: 1px solid var(--rule);
+	color: var(--accent);
+	font-size: 1.08em;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	break-after: avoid;
+}
+
+/* An employer / school: title left, dates right. */
+h3,
+p.dated {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 1.5em;
+	margin: 0.75em 0 0.2em;
+	color: var(--ink);
+	font-size: 1.04em;
+	font-weight: 600;
+	break-after: avoid;
+}
+h3 + p.dated,
+p.dated + p.dated {
+	margin-top: 0.35em;
+}
+/* A dated line under a heading is a sub-entry: a little lighter. */
+p.dated {
+	font-size: 1em;
+}
+.dates {
+	flex: none;
+	color: var(--muted);
+	font-size: 0.9em;
+	font-weight: 400;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* A bold-only line is a sub-heading (team, project group). No break-after:
+   avoid here — Chrome honours it by dragging several following bullets onto
+   the next page, which leaves a bigger hole than an occasional orphaned line. */
+p:has(> strong:only-child) {
+	margin: 0.65em 0 0.15em;
+	font-size: 1em;
+}
+
+p {
+	margin: 0 0 0.3em;
+}
+
+/* ---------- Lists ---------- */
+
+ul {
+	margin: 0 0 0.35em;
+	padding-left: 1.2em;
+}
+li {
+	margin: 0 0 0.18em;
+	break-inside: avoid;
+}
+li::marker {
+	color: var(--muted);
+}
+li > ul {
+	margin-top: 0.15em;
+}
+li > ul > li {
+	margin-bottom: 0.15em;
+}
+/* Nested bullets get a hollow marker to read as a level down. */
+li > ul {
+	list-style-type: circle;
+}

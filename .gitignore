@@ -22,3 +22,9 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# résumé sources and generated PDFs — the full CV has contact details that must not be published
+cv/
+
+# personal notes, not blog posts
+notes/

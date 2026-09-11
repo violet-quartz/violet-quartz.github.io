@@ -20,6 +20,7 @@ import { education, experience, profile, projects, skills } from '../data/cv';
 					{
 						profile.links.map((link) => (
 							<li>
+								<span class="link-name">{link.name}：</span>
 								<a href={link.href}>{link.label}</a>
 							</li>
 						))
@@ -27,31 +28,33 @@ import { education, experience, profile, projects, skills } from '../data/cv';
 				</ul>
 			</header>
 
-			<section>
-				<h2>Projects</h2>
-				{
-					projects.map((project) => (
-						<article class="entry">
-							<div class="entry-head">
-								<h3>
-									<a href={project.href}>{project.name}</a>
-								</h3>
-								{project.writeup && (
-									<a class="meta" href={project.writeup}>
-										write-up →
-									</a>
-								)}
-							</div>
-							<p class="blurb">{project.blurb}</p>
-							<ul>
-								{project.highlights.map((item) => (
-									<li>{item}</li>
-								))}
-							</ul>
-						</article>
-					))
-				}
-			</section>
+			{
+				projects.length > 0 && (
+					<section>
+						<h2>Projects</h2>
+						{projects.map((project) => (
+							<article class="entry">
+								<div class="entry-head">
+									<h3>
+										<a href={project.href}>{project.name}</a>
+									</h3>
+									{project.writeup && (
+										<a class="meta" href={project.writeup}>
+											write-up →
+										</a>
+									)}
+								</div>
+								<p class="blurb">{project.blurb}</p>
+								<ul>
+									{project.highlights.map((item) => (
+										<li>{item}</li>
+									))}
+								</ul>
+							</article>
+						))}
+					</section>
+				)
+			}
 
 			<section>
 				<h2>Experience</h2>
@@ -67,11 +70,13 @@ import { education, experience, profile, projects, skills } from '../data/cv';
 								</span>
 							</div>
 							<p class="blurb">{job.location}</p>
-							<ul>
-								{job.highlights.map((item) => (
-									<li>{item}</li>
-								))}
-							</ul>
+							{job.highlights.length > 0 && (
+								<ul>
+									{job.highlights.map((item) => (
+										<li>{item}</li>
+									))}
+								</ul>
+							)}
 						</article>
 					))
 				}
@@ -139,14 +144,18 @@ import { education, experience, profile, projects, skills } from '../data/cv';
 		color: rgb(var(--gray));
 		margin: 0 0 0.6rem 0;
 	}
+	/* One channel per line, each prefixed by its label. */
 	.links {
 		list-style: none;
 		padding: 0;
 		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem 1.1rem;
 		font-size: 0.9em;
+	}
+	.links li {
+		margin-bottom: 0.15rem;
+	}
+	.link-name {
+		color: rgb(var(--gray));
 	}
 
 	section {
