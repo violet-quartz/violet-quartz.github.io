@@ -18,28 +18,20 @@ export default defineConfig({
 			rehypePlugins: [rehypeKatex],
 		}),
 		shikiConfig: {
-			theme: 'github-dark',
+			// Light so code blocks sit inside the page instead of punching holes in it.
+			theme: 'github-light',
 			wrap: false,
 		},
 	},
 	// Downloaded and self-hosted at build time — no runtime request to Google.
 	// CJK families sit before the generic fallback so Chinese glyphs land on a
-	// real serif/sans instead of whatever `serif` happens to be.
+	// real sans instead of whatever `sans-serif` happens to be.
 	fonts: [
-		{
-			provider: fontProviders.google(),
-			name: 'Source Serif 4',
-			cssVariable: '--font-serif',
-			weights: [400, 600],
-			styles: ['normal', 'italic'],
-			subsets: ['latin', 'latin-ext'],
-			fallbacks: ['Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Georgia', 'serif'],
-		},
 		{
 			provider: fontProviders.google(),
 			name: 'Inter',
 			cssVariable: '--font-sans',
-			weights: [400, 500, 600],
+			weights: [400, 500, 600, 700],
 			subsets: ['latin', 'latin-ext'],
 			fallbacks: ['PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'system-ui', 'sans-serif'],
 		},

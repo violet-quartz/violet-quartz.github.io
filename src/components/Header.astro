@@ -31,7 +31,7 @@ import HeaderLink from './HeaderLink.astro';
 	nav {
 		max-width: var(--measure);
 		margin: 0 auto;
-		padding: 1.15rem var(--gutter);
+		padding: 1rem var(--gutter);
 		box-sizing: border-box;
 		display: flex;
 		align-items: center;
@@ -39,7 +39,7 @@ import HeaderLink from './HeaderLink.astro';
 		gap: 1.5rem;
 	}
 	.brand {
-		font-size: 1rem;
+		font-size: 1.05rem;
 		font-weight: 600;
 		letter-spacing: -0.01em;
 		color: var(--ink);
@@ -47,14 +47,13 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	.brand:hover {
 		color: var(--accent);
+		text-decoration: none;
 	}
 	.links {
 		display: flex;
 		align-items: center;
 		gap: 1.35rem;
-		font-family: var(--font-sans);
-		font-size: 0.76rem;
-		letter-spacing: 0.02em;
+		font-size: 0.9rem;
 	}
 	.icon {
 		display: flex;

@@ -1,0 +1,52 @@
+---
+// Flat list of h2/h3 entries; h3s are indented via a class rather than nested
+// <ul>s so the markup stays simple and the scroll-spy can treat them alike.
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+	headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+---
+
+<nav class="toc" aria-label="目录">
+	<ul>
+		{
+			headings.map((h) => (
+				<li class:list={[`depth-${h.depth}`]}>
+					<a href={`#${h.slug}`}>{h.text}</a>
+				</li>
+			))
+		}
+	</ul>
+</nav>
+
+<style>
+	.toc ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.toc li {
+		margin: 0;
+	}
+	.toc a {
+		display: block;
+		padding: 0.18em 0 0.18em 0.75em;
+		border-left: 2px solid transparent;
+		color: var(--muted);
+		text-decoration: none;
+		overflow-wrap: anywhere;
+	}
+	.toc .depth-3 a {
+		padding-left: 1.75em;
+	}
+	.toc a:hover {
+		color: var(--ink);
+	}
+	.toc a.active {
+		color: var(--accent);
+		border-left-color: var(--accent);
+	}
+</style>

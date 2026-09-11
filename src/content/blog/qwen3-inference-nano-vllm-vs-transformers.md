@@ -2,7 +2,7 @@
 title: '同一个 Qwen3，两种写法：从 transformers 到 nano-vllm 的推理改造'
 description: '以 Qwen3-8B 为例，先把模型结构和每一处维度画清楚，再逐项对照 transformers 与 nano-vllm 的实现差异：权重融合、扁平批次、分页 KV cache、注意力后端、RoPE、残差融合与张量并行。'
 pubDate: '2026-07-29'
-tags: ['llm', 'inference', 'qwen3', 'transformers', 'nano-vllm']
+tags: ['llm', 'inference', 'qwen3', 'transformers', 'nano-vllm', 'vllm']
 ---
 
 

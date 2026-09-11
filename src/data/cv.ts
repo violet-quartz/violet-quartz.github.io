@@ -6,15 +6,13 @@
 // is turned into a PDF with `npm run cv:pdf`.
 
 export const profile = {
-	name: 'Flora',
+	name: 'Flora Ma',
 	// One line under your name. Say what you do, not what you want.
 	tagline: 'AI Infra 工程师 · LLM 推理服务与平台',
 	// Public page: keep to channels you don't mind being scraped.
 	// Phone/address belong in the PDF you send directly, not here.
 	// One per line: `name` is the plain-text prefix, `label` is the clickable part.
 	links: [
-		{ name: '个人主页', label: 'violet-quartz.github.io', href: 'https://violet-quartz.github.io' },
-		{ name: 'GitHub', label: 'github.com/violet-quartz', href: 'https://github.com/violet-quartz' },
 		{ name: '邮箱', label: 'myf.py@163.com', href: 'mailto:myf.py@163.com' },
 	],
 };

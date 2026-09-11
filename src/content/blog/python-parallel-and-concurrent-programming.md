@@ -2,7 +2,7 @@
 title: 'Python Parallel and Concurrent Programming'
 description: 'Core concepts of parallel and concurrent programming — threads, processes, the GIL, synchronization primitives, and executor pools — and how they play out in Python.'
 pubDate: '2023-12-22'
-tags: ['python', 'concurrency']
+tags: ['python', 'concurrency', 'parallel programming']
 ---
 
 Parallel and concurrent programming are powerful tools to increase processing throughput and to write 

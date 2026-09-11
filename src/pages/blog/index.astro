@@ -5,18 +5,17 @@ import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { categories, categoryOf, uncategorized } from '../../data/categories';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 
-// Posts are already newest-first, so walking them in order yields years in order too.
-const byYear = posts.reduce<Map<number, typeof posts>>((acc, post) => {
-	const year = post.data.pubDate.getFullYear();
-	if (!acc.has(year)) acc.set(year, []);
-	acc.get(year)!.push(post);
-	return acc;
-}, new Map());
+// Group by category in config order, "其他" last; posts are already
+// newest-first, so each group stays newest-first too. Empty groups are dropped.
+const byCategory = [...categories.map((c) => c.name), uncategorized]
+	.map((name) => [name, posts.filter((post) => categoryOf(post.data.tags) === name)] as const)
+	.filter(([, group]) => group.length > 0);
 ---
 
 <!doctype html>
@@ -31,11 +30,11 @@ const byYear = posts.reduce<Map<number, typeof posts>>((acc, post) => {
 			<p class="intro">{SITE_DESCRIPTION}</p>
 
 			{
-				[...byYear].map(([year, yearPosts]) => (
-					<section class="year">
-						<h2 class="eyebrow">{year}</h2>
+				byCategory.map(([name, groupPosts]) => (
+					<section class="group">
+						<h2 class="eyebrow">{name}</h2>
 						<ul>
-							{yearPosts.map((post) => (
+							{groupPosts.map((post) => (
 								<li>
 									<a class="title" href={`/blog/${post.id}/`}>
 										{post.data.title}
@@ -61,38 +60,38 @@ const byYear = posts.reduce<Map<number, typeof posts>>((acc, post) => {
 <style>
 	.intro {
 		color: var(--muted);
-		margin: 0 0 3.5rem;
-		max-width: 32em;
+		margin: 0 0 3rem;
+		max-width: 36em;
 	}
 
-	.year {
-		margin-bottom: 3.2rem;
+	.group {
+		margin-bottom: 2.8rem;
 	}
-	.year:last-child {
+	.group:last-child {
 		margin-bottom: 0;
 	}
-	.year ul {
+	.group ul {
 		list-style: none;
 		padding: 0;
 		margin: 0;
 	}
-	.year li {
-		margin: 0 0 2.2rem;
+	.group li {
+		margin: 0 0 1.6rem;
 	}
-	.year li:last-child {
+	.group li:last-child {
 		margin-bottom: 0;
 	}
 
 	.title {
 		display: block;
-		font-size: 1.14rem;
+		font-size: 1.05rem;
 		font-weight: 600;
 		color: var(--ink);
-		line-height: 1.35;
-		text-decoration: none;
+		line-height: 1.4;
 	}
 	.title:hover {
 		color: var(--accent);
+		text-decoration: none;
 	}
 	.meta {
 		margin: 0.3rem 0 0.45rem;

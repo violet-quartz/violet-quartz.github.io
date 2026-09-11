@@ -1,35 +1,43 @@
 /*
-  Design system: a single 680px column, warm paper background, Source Serif 4 for
-  reading and Inter for chrome/metadata. Light theme only — no dark variants.
+  Design system: technical-docs style, close to how a Markdown file renders on
+  GitHub. Sans everywhere, neutral white ground, a strong heading scale with a
+  rule under h2, light code blocks that sit inside the page. Light theme only.
  */
 
 :root {
-	/* Warm neutral paper palette. Nothing is pure white or pure black. */
-	--bg: #fdfcf9;
-	--bg-subtle: #f4f2ec;
-	--ink: #1b1b18;
-	--text: #33332e;
-	--muted: #78776e;
-	--rule: #e6e3da;
-	--accent: #9c5b3c;
-	--accent-soft: rgba(156, 91, 60, 0.32);
+	/* Neutral palette — nothing warm, nothing pure black. */
+	--bg: #ffffff;
+	--bg-subtle: #f6f8fa;
+	--ink: #1f2328;
+	--text: #24292f;
+	--muted: #59636e;
+	--rule: #d8dee4;
+	--rule-strong: #b8c0c9;
+	--accent: #0969da;
+	--accent-soft: rgba(9, 105, 218, 0.35);
+	--code-bg: #eff1f3;
 
 	/* Legacy rgb-triplet tokens — cv.astro still composes these via rgb(). */
-	--black: 27, 27, 24;
-	--gray: 120, 119, 110;
-	--gray-light: 230, 227, 218;
-	--gray-dark: 51, 51, 46;
+	--black: 31, 35, 40;
+	--gray: 89, 99, 110;
+	--gray-light: 216, 222, 228;
+	--gray-dark: 36, 41, 47;
 
 	/* One width for everything — header, prose, code blocks, tables, figures.
-	   Sized so the widest ASCII diagram in the posts (93 mono columns ≈ 785px
+	   Sized so the widest ASCII diagram in the posts (93 mono columns ≈ 800px
 	   including padding) fits without a scrollbar. */
 	--measure: 860px;
 	--gutter: 1.5rem;
+	/* Post pages: the article keeps --measure; the table of contents hangs in
+	   the right margin when the viewport is wide enough. */
+	--toc-width: 220px;
+	--toc-gap: 3rem;
 }
 
 html {
-	font-size: 17px;
+	font-size: 16px;
 	-webkit-text-size-adjust: 100%;
+	scroll-behavior: smooth;
 }
 
 body {
@@ -37,9 +45,9 @@ body {
 	padding: 0;
 	background: var(--bg);
 	color: var(--text);
-	font-family: var(--font-serif);
+	font-family: var(--font-sans);
 	font-size: 1rem;
-	line-height: 1.78;
+	line-height: 1.7;
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -56,7 +64,7 @@ main {
 	width: 100%;
 	max-width: var(--measure);
 	margin: 0 auto;
-	padding: 4rem var(--gutter) 6rem;
+	padding: 3rem var(--gutter) 5rem;
 	box-sizing: border-box;
 }
 
@@ -70,30 +78,39 @@ h5,
 h6 {
 	color: var(--ink);
 	font-weight: 600;
-	line-height: 1.28;
-	letter-spacing: -0.011em;
-	margin: 2.6rem 0 0.7rem;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+	margin: 2.2em 0 0.7em;
 	scroll-margin-top: 1.5rem;
 }
 h1 {
-	font-size: 1.9rem;
-	line-height: 1.2;
+	font-size: 2rem;
+	font-weight: 700;
+	line-height: 1.25;
 	margin-top: 0;
 }
+/* The GitHub cue: a rule under every h2 makes sections scannable. */
 h2 {
-	font-size: 1.34rem;
+	font-size: 1.5rem;
+	padding-bottom: 0.3em;
+	border-bottom: 1px solid var(--rule);
 }
 h3 {
-	font-size: 1.11rem;
+	font-size: 1.2rem;
+	margin-top: 1.8em;
 }
-h4,
+h4 {
+	font-size: 1.02rem;
+	margin-top: 1.6em;
+}
 h5,
 h6 {
-	font-size: 1rem;
+	font-size: 0.95rem;
+	color: var(--muted);
 }
 
 p {
-	margin: 0 0 1.15em;
+	margin: 0 0 1em;
 }
 
 strong,
@@ -106,53 +123,40 @@ em {
 	font-style: italic;
 }
 
-/* Links carry a soft accent underline rather than a saturated link colour —
-   keeps long prose from turning blue. */
+/* Links are plainly blue — technical readers expect to spot them. */
 a {
-	color: inherit;
-	text-decoration: underline;
-	text-decoration-thickness: 1px;
-	text-decoration-color: var(--accent-soft);
-	text-underline-offset: 0.19em;
-	transition:
-		color 0.15s ease,
-		text-decoration-color 0.15s ease;
+	color: var(--accent);
+	text-decoration: none;
 }
 a:hover {
-	color: var(--accent);
-	text-decoration-color: var(--accent);
+	text-decoration: underline;
+	text-underline-offset: 0.18em;
 }
 
-/* ---------- Small caps label, used for section eyebrows ---------- */
+/* ---------- Section label, used above post groups ---------- */
 
 .eyebrow {
-	font-family: var(--font-sans);
-	font-size: 0.68rem;
-	font-weight: 500;
-	letter-spacing: 0.13em;
-	text-transform: uppercase;
-	color: var(--muted);
-	margin: 0 0 1.4rem;
-	padding-bottom: 0.6rem;
+	font-size: 1.15rem;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0 0 1.1rem;
+	padding-bottom: 0.4rem;
 	border-bottom: 1px solid var(--rule);
 }
 
-/* Dates, tags, bylines — always sans, always quiet. */
+/* Dates, tags, bylines — small and quiet. */
 .meta {
-	font-family: var(--font-sans);
-	font-size: 0.74rem;
-	letter-spacing: 0.02em;
+	font-size: 0.8rem;
 	color: var(--muted);
 }
 
 /* ---------- Blocks ---------- */
 
 blockquote {
-	margin: 1.8rem 0;
-	padding: 0 0 0 1.4rem;
-	border-left: 2px solid var(--accent-soft);
+	margin: 1.4rem 0;
+	padding: 0 0 0 1.1rem;
+	border-left: 4px solid var(--rule);
 	color: var(--muted);
-	font-style: italic;
 }
 blockquote p:last-child {
 	margin-bottom: 0;
@@ -160,8 +164,8 @@ blockquote p:last-child {
 
 hr {
 	border: none;
-	border-top: 1px solid var(--rule);
-	margin: 3rem 0;
+	border-top: 2px solid var(--rule);
+	margin: 2.4rem 0;
 }
 
 img {
@@ -172,57 +176,73 @@ img {
 
 ul,
 ol {
-	padding-left: 1.4rem;
-	margin: 0 0 1.15em;
+	padding-left: 1.8rem;
+	margin: 0 0 1em;
 }
 li {
-	margin-bottom: 0.35em;
+	margin-bottom: 0.3em;
+}
+li > ul,
+li > ol {
+	margin: 0.3em 0 0;
 }
 li::marker {
 	color: var(--muted);
 }
 
+/* Full grid, like GitHub: technical tables are read cell by cell. */
 table {
-	width: 100%;
 	border-collapse: collapse;
-	font-family: var(--font-sans);
-	font-size: 0.82rem;
-	margin: 1.8rem 0;
+	font-size: 0.9rem;
+	line-height: 1.5;
+	margin: 1.4rem 0;
+	/* Content-width like GitHub; wide tables scroll instead of overflowing. */
+	display: block;
+	width: max-content;
+	max-width: 100%;
+	overflow-x: auto;
 }
 th,
 td {
 	text-align: left;
-	padding: 0.55em 0.8em;
-	border-bottom: 1px solid var(--rule);
+	padding: 0.45em 0.85em;
+	border: 1px solid var(--rule);
 	vertical-align: top;
 }
 th {
 	font-weight: 600;
 	color: var(--ink);
-	border-bottom-color: var(--muted);
-	white-space: nowrap;
+	background: var(--bg-subtle);
+}
+tbody tr:nth-child(even) {
+	background: var(--bg-subtle);
 }
 
 /* ---------- Code ---------- */
 
 code {
 	font-family: var(--font-mono);
-	font-size: 0.82em;
-	background: var(--bg-subtle);
-	border: 1px solid var(--rule);
-	border-radius: 4px;
-	padding: 0.1em 0.35em;
+	font-size: 0.875em;
+	background: var(--code-bg);
+	border-radius: 5px;
+	padding: 0.15em 0.4em;
 }
 
 pre {
 	font-family: var(--font-mono);
-	font-size: 0.78rem;
-	line-height: 1.65;
-	padding: 1.15rem 1.3rem;
+	font-size: 0.85rem;
+	line-height: 1.55;
+	padding: 1rem 1.2rem;
+	border: 1px solid var(--rule);
 	border-radius: 6px;
 	overflow-x: auto;
-	margin: 1.8rem 0;
+	margin: 1.4rem 0;
 	tab-size: 2;
+}
+/* Shiki inlines the theme's white background; use the page's subtle grey so
+   blocks read as part of the page rather than a floating card. */
+pre.astro-code {
+	background-color: var(--bg-subtle) !important;
 }
 /* Strip the inline-code chrome from code inside a block. */
 pre > code {
@@ -233,27 +253,30 @@ pre > code {
 /* ---------- KaTeX ---------- */
 
 .katex {
-	font-size: 1.02em;
+	font-size: 1.05em;
 }
 /* Long display equations scroll instead of blowing out the column. */
 .katex-display {
 	overflow-x: auto;
 	overflow-y: hidden;
 	padding: 0.4rem 0;
-	margin: 1.6rem 0;
+	margin: 1.4rem 0;
 }
 
 /* ---------- Responsive ---------- */
 
 @media (max-width: 860px) {
-	html {
-		font-size: 16px;
-	}
 	main {
-		padding: 2.5rem var(--gutter) 4rem;
+		padding: 2rem var(--gutter) 4rem;
 	}
 	h1 {
-		font-size: 1.7rem;
+		font-size: 1.65rem;
+	}
+	h2 {
+		font-size: 1.32rem;
+	}
+	h3 {
+		font-size: 1.12rem;
 	}
 }
 

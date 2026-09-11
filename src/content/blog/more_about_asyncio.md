@@ -2,7 +2,7 @@
 title: '对 asyncio 更详细的介绍'
 description: '本文介绍了 asyncio 的基本使用以及背后的事件循环和调度机制，总结了协程之间的同步机制，并介绍了协程的常用场景，对于计算密集型的 python 任务可以通过 loop.run_in_executor 丢到进程池中'
 pubDate: '2026-09-08'
-tags: ['asyncio', 'python', 'parallel programming']
+tags: ['asyncio', 'python', 'parallel programming', 'concurrency']
 ---
 
 # asyncio

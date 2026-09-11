@@ -45,7 +45,10 @@ if (!existsSync(input)) {
 // ---------- Markdown → HTML ----------
 
 const CJK = '[\\u3000-\\u303f\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff\\uff00-\\uffef]';
-const CJK_WRAP = new RegExp(`(${CJK})\\n(${CJK})`, 'g');
+const CJK_PUNCT = '[\\u3000-\\u303f\\uff00-\\uffef]';
+// A hard wrap between two CJK characters, or on either side of CJK
+// punctuation (、，。（）「」…), is just a wrap — no space belongs there.
+const CJK_WRAP = new RegExp(`(${CJK})\\n(?=${CJK})|(${CJK_PUNCT})\\n|\\n(?=${CJK_PUNCT})`, 'g');
 // "2024.01 – 2026.07", "2012 – 2015", "2021 – 至今", with any dash flavour.
 const DATE_RANGE = /(?:^|\s|　)((?:\d{4}(?:\.\d{1,2})?)\s*[–—-]\s*(?:\d{4}(?:\.\d{1,2})?|至今|Present|present))\s*$/;
 
