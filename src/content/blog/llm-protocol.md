@@ -16,7 +16,6 @@ tags: ['llm', 'inference', 'openai api', 'anthropic api']
 | `max_tokens` | 可选 | 必填 |
 | 消息内容 | 字符串，或 parts 数组（`text`、`image_url` 等） | 字符串，或 content blocks 数组（`text`、`image`、`document`、`tool_use`、`tool_result`、`thinking` 等） |
 | 响应结构 | `choices[].message`，可用 `n` 一次生成多个候选 | 单个 `content` 数组，没有多候选 |
-| 提示词缓存 | 基本是自动的 | 通过 `cache_control` 显式标记缓存断点 |
 | 流式输出 | 每个 chunk 都是 data: {...}，里面的 choices[0].delta 带增量文本或增量的工具参数，最后以 data: [DONE] 结束 | 带类型的事件流：message_start → content_block_start → 若干 content_block_delta → content_block_stop →（下一个块）→ message_delta（带 stop_reason 和用量）→ message_stop |
 | 工具定义 | 包在 {"type": "function", "function": {name, description, parameters}} 里 | 更扁平，{name, description, input_schema} 定义一个工具 |
 | 工具调用返回结果 | 返回的 message 里带 tool_calls，其中 arguments 是一个 JSON 字符串，需要自己再 parse 一次 | 返回的 content 里出现 tool_use 块，input 直接是 JSON 对象。 |
@@ -242,37 +241,145 @@ You may call one or more functions...
 
 ### 3.2 从 KV cache 复用角度推出一些实用原则
 
-前缀缓存的规则很简单：从第一个 token 开始逐个比对，遇到第一个不同的 token，从那里往后全部重算。在 chat template 中，tools 和 system 放在最前面，后面是历史信息。
+前缀缓存的规则很简单：从第一个 token 开始逐个比对，遇到第一个不同的 token，从那里往后全部重算。在 chat template 中，tools 和 system 放在最前面，后面是历史信息。有些模型 template 支持中途 system，有些会忽略。
 
 由此我们可以推出一些实践原则：
-1. 不要在 system 里放动态内容，对于 Anthropic 协议，把中途 system 提到顶层合并，等于每次都在改前缀，是缓存不友好的做法，推荐使用原地转成 user 消息
+1. 不要在 system 里放动态内容，system 保持稳定
 2. 工具列表保持稳定、有序。 中途增删工具、调整顺序、修改描述，都会导致全量重算。
 3. 序列化要确定。 同样的工具，如果 JSON key 的顺序不同、空格不同，渲染出来就是不同的 token。自己拼请求或写网关时，要保证序列化结果每次一致
 4. 历史消息尽量不要被改写。
 
 ### 3.3 如何践行实践原则
 
-#### 3.3.1 支持按需加载工具
+#### 3.3.1 对于 Anthropic 协议，对于中途 system，推荐原地转成 user 信息
 
-如何保证工具列表保持稳定、有序？如果中途增删工具、修改描述怎么处理？答案是支持按需加载工具。
+对于 Anthropic 协议，把中途 system 提到顶层合并，等于每次都在改前缀，是缓存不友好的做法，推荐使用原地转成 user 消息。
+
+#### 3.3.2 支持按需加载工具
+
+尽量保证对话过程中，工具列表稳定、有序，将全部工具直接放进 `tools` 参数最简单。
+
+如果中途增删工具、修改描述怎么处理？答案是支持按需加载工具。
 
 最典型的就是 Anthropic API 的 tool search tool 配合 defer_loading：
 
 在工具列表里放一个 tool search 工具，其他工具全部标记 defer_loading: true，这样 Claude 一开始只能看到搜索工具。带 defer_loading: true 的工具在计算缓存 key 之前就会从渲染后的 tools 区块里剥离，根本不出现在 system prompt 前缀中；当搜索命中某个延迟工具并返回 tool_reference 时，这个工具的完整定义会在对话正文的那个位置内联展开（定义被渲染在对应 tool_result 的位置），而不是插进前缀。
 
+自己部署模型时，可以这样做：
 
-#### 3.3.2 保证序列化一致
+tools 参数里永远只放两个固定的“元工具”：
+- search_tools(query)：搜索有哪些工具可用，返回工具的说明书（名字、描述、参数 schema）；
+- call_tool(name, arguments)：调用某个工具，name 是要调用的工具名，arguments 是传给它的参数。
+
+真正干活的那 200 个工具（get_weather、send_email 等）从来不出现在 tools 参数里。模型通过 search_tools 读到它们的说明书，再通过 call_tool 间接调用它们。你的代码收到 call_tool 后，根据 name 把请求转发给真正的实现，这就是“调度层按 name 路由”的意思。
+
+`tools` 参数（每次请求都完全相同）：
+
+```json
+"tools": [
+  {
+    "type": "function",
+    "function": {
+      "name": "search_tools",
+      "description": "按关键词搜索可用工具，返回工具名、用途和参数格式。调用任何工具前必须先搜索。",
+      "parameters": {
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "call_tool",
+      "description": "调用通过 search_tools 找到的工具。name 为工具名，arguments 为符合该工具参数格式的对象。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "arguments": {"type": "object"}
+        },
+        "required": ["name", "arguments"]
+      }
+    }
+  }
+]
+```
+
+然后对话逐步变成这样（OpenAI Chat Completions 格式）：
+
+```json
+"messages": [
+  {"role": "user", "content": "帮我查一下北京的天气"},
+
+  {"role": "assistant", "content": null, "tool_calls": [{
+    "id": "call_1", "type": "function",
+    "function": {"name": "search_tools", "arguments": "{\"query\": \"天气\"}"}
+  }]},
+  {"role": "tool", "tool_call_id": "call_1",
+   "content": "[{\"name\": \"get_weather\", \"description\": \"查询城市当前天气\", \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\"}}, \"required\": [\"city\"]}}]"},
+
+  {"role": "assistant", "content": null, "tool_calls": [{
+    "id": "call_2", "type": "function",
+    "function": {"name": "call_tool",
+                 "arguments": "{\"name\": \"get_weather\", \"arguments\": {\"city\": \"北京\"}}"}
+  }]},
+  {"role": "tool", "tool_call_id": "call_2",
+   "content": "{\"temp_c\": 22, \"condition\": \"晴\"}"}
+]
+```
+
+最后模型回答“北京现在 22 度，晴”。
+
+你的应用收到模型的工具调用后，这样处理：
+
+```python
+REGISTRY = {
+    "get_weather": {"schema": {...}, "fn": get_weather_impl},
+    "send_email":  {"schema": {...}, "fn": send_email_impl},
+    # …… 200 个工具
+}
+
+def handle_tool_call(name, args):
+    if name == "search_tools":
+        hits = search_registry(args["query"])          # 关键词或 embedding 检索
+        return json.dumps(
+            [{"name": n, **REGISTRY[n]["schema"]} for n in hits],
+            ensure_ascii=False,
+        )
+
+    if name == "call_tool":
+        target, inner_args = args["name"], args["arguments"]
+        if target not in REGISTRY:
+            return f"错误：没有名为 {target} 的工具，请先用 search_tools 搜索。"
+        err = validate(inner_args, REGISTRY[target]["schema"])   # 自己做 schema 校验
+        if err:
+            return f"参数错误：{err}，请按工具的参数格式重试。"
+        return json.dumps(REGISTRY[target]["fn"](**inner_args), ensure_ascii=False)
+```
+
+这个方案也有几个需要接受的缺点：
+
+1. **参数没有约束解码保护。** `call_tool` 的 `arguments` 声明的是任意 object，模型生成时不会被 `get_weather` 的 schema 约束，所以必须像上面代码那样自己校验，并把错误信息返回给模型让它重试。相应地，`call_tool` 不能开 strict 模式（strict 要求 `additionalProperties: false`，无法表达任意 object），如果一定要开，可以把 `arguments` 声明成 JSON 字符串，再自己解析。
+2. **模型要多走一步，并且“记住”说明书。** 每个新工具都要先搜索再调用，多一轮请求；而且说明书在对话中部，对话很长时，模型可能记不清参数格式。
+3. **略偏离训练分布。** 模型训练时见惯了直接调用工具，这种两层包装的方式不太常见。能力强的模型通常没问题，弱一些的模型可能会忘记先搜索，或者把参数嵌套错。在元工具的 `description` 里把用法写清楚会有很大帮助。
+
+所以总的来说：工具数量不多时，直接全部放进 `tools` 参数最简单。
+
+
+#### 3.3.3 保证序列化一致
 
 如何保证工具的序列化一致？首先要明确进到 template 前序列化在哪里发生，然后盯以下几处：
 
 - 工具列表的顺序。最简单的办法是发请求前按名字排序。
-- 每个工具内部 key 的顺序。 确保 schema 来源是确定的：Python 3.7+ 的 dict 和 JS 的对象都保留插入顺序，只要构造过程确定就没问题；JS 中整数形式的 key 会被自动提前，要留意。如果你没法控制来源，可以统一做一次规范化（递归排序 key），只要每次都这样做，结果就是一致的。
+- 每个工具内部 key 的顺序。 确保 schema 来源是确定的：Python 3.7+ 的 dict 和 JS 的对象都保留插入顺序，只要构造过程确定就没问题；JS 中整数形式的 key 会被自动提前，要留意。如果没法控制来源，可以统一做一次规范化（递归排序 key），只要每次都这样做，结果就是一致的。
 - 中文转义。 ensure_ascii=True 会把“北京”变成 \u5317\u4eac，token 完全不同。在自己拼字符串（比如方案 A 里把 schema 写进 tool result）的地方要统一设置。
 - 历史工具调用的参数不要重新序列化。 OpenAI 格式里 arguments 是字符串，模板一般会原样输出。拿到模型生成的 arguments 后，回传时要原样放回，不要 json.loads 再 json.dumps，否则空格和 key 顺序可能和模型当初生成的不一致，会从这一轮开始缓存失效。
 - 内容本身不能有动态值。 工具描述里别出现时间、版本号、计数这类每次都会变的东西。
 
 
-#### 3.3.3 是否删掉历史轮次的思考内容
+#### 3.3.4 是否删掉历史轮次的思考内容
 
 有些模型比如 Qwen3、deepseek 需要删除历史轮次的思考内容（它不是删除所有历史 assistant 轮的思考，而是以最后一条 user 消息为界。在这条 user 消息之后的 assistant 轮会保留思考，之前的才删除。这样设计是因为，在一次工具调用循环中，模型需要看到自己之前的推理才能接着做下去）。一旦新的 user message 出现，思考都会被删掉，与历史消息不同，这一整段工具调用历史（工具返回的文件内容、搜索结果等往往非常长）都要重算。
 
