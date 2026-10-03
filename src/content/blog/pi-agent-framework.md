@@ -1,6 +1,6 @@
 ---
 title: 'Pi Agent Harness 介绍'
-description: 'pi agent sdk 按照分层 pi-ai -> pi-agent-core -> pi-coding-agent 循序渐进，本文我们结合源码探讨了pi中的消息与工具协议的统一、Agent 循环的核心实现、会话的持久化设计与压缩机制以及Extension 扩展系统的相关问题'
+description: 'Pi 是一个极简的 Agent Harness 框架，按照分层 pi-ai -> pi-agent-core -> pi-coding-agent 循序渐进，本文我们结合源码探讨了 Pi 中的消息与工具协议的统一、Agent 循环的核心实现、会话的持久化设计与压缩机制以及Extension 扩展系统的相关问题'
 pubDate: '2026-10-03'
 tags: ['agent', 'infra', 'pi', 'agent-harness']
 ---
