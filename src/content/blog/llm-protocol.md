@@ -2,7 +2,7 @@
 title: '大语言模型接口协议'
 description: '本文对比介绍了 Anthropic Messages API、OpenAI Chat Completions API 和 OpenAI Responses API 三种主流的大语言模型接口协议，并探讨了在考虑到 KV cache 复用的情况下如何更好的使用协议'
 pubDate: '2026-10-01'
-tags: ['llm', 'inference', 'openai api', 'anthropic api']
+tags: ['llm', 'inference', 'openai-api', 'anthropic-api']
 ---
 
 大语言模型的主流接口协议，主要有 Anthropic Messages API、OpenAI Chat Completions API 和 OpenAI Responses API，下面我们对比一下这三种 API，并探讨一下在考虑到 KV cache 复用的情况下如何更好的使用协议。

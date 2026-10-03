@@ -2,7 +2,7 @@
 title: '大语言模型推理和训练显存估算'
 description: '本文以 Qwen3-8B 为例，我们对其推理/训练占用的显存进行了分类和估算，可依据此来筛选可用的 GPU 机器'
 pubDate: '2026-09-04'
-tags: ['llm', 'inference', 'training', 'memory estimation']
+tags: ['llm', 'inference', 'training', 'memory-estimation']
 ---
 
 以 Qwen3-8B 为例，我们对其推理/训练所需显存进行估算。
