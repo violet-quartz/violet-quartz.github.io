@@ -9,12 +9,12 @@ export type Category = {
 };
 
 export const categories: Category[] = [
+	{ name: '大语言模型', keywords: ['llm'] },
 	{ name: 'vLLM', keywords: ['vllm'] },
 	{ name: 'GPU 编程', keywords: ['cuda', 'triton'] },
-	{ name: '大语言模型', keywords: ['llm'] },
+	{ name: 'Agent', keywords: ['agent'] },
 	{ name: '并发编程', keywords: ['concurrency'] },
 	{ name: 'MLOps', keywords: ['mlops'] },
-	{ name: 'Agent', keywords: ['agent'] },
 ];
 
 export const uncategorized = '其他';
