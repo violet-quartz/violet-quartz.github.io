@@ -2,7 +2,7 @@
 title: '一个 prompt 的一生：nano-vllm 从起服务到吐出 token'
 description: '顺着 LLM(...) 和 engine.step() 两条线，把 nano-vllm 起服务时的进程拓扑、权重加载、显存规划、CUDA graph，以及一次推理里调度、张量准备、前向、采样、状态回写的全流程串成一张图。'
 pubDate: '2026-07-30'
-tags: ['vllm', 'nano-vllm', 'model-runner', 'llm', 'inference']
+tags: ['vllm', 'nano-vllm', 'model-runner', 'llm-inference']
 ---
 
 前面两篇分别拆过 [nano-vllm](https://github.com/GeeeekExplorer/nano-vllm) 的两个局部：
