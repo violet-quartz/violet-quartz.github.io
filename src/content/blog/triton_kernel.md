@@ -42,7 +42,7 @@ def add(x: torch.Tensor, y: torch.Tensor):
 triton: 框架层，提供外壳和工具，用在 host 端，类似 CUDA 代码中的 host 代码 + 工具链。
 - @triton.jit：把 Python 函数编译成 GPU kernel 的装饰器
 - triton.autotune、triton.heuristics：自动调参
-- kernel 的启动语法（kernel[grid](...)）
+- kernel 的启动语法（`kernel[grid](...)`）
 - 底层的编译器、运行时、和 GPU 打交道的部分
 
 triton.language: 语言层，提供在 kernel 内部实际使用的积木，只能在 @triton.jit 修饰的 kernel 函数体内部使用，
@@ -74,7 +74,7 @@ def kernel(x_ptr, stride_m, stride_n, ...):
 ```python
 # x_ptr 指向一维 tensor，长度为 n
 pid = tl.program_id(0)
-offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
 # BLOCK_SIZE 必须是 2 的幂，如果 x 的长度不是 2 的幂，注意使用 mask 做边界保护
 mask = offsets < n 
 x = tl.load(x_ptr + offsets, mask=mask, other=-float('inf'))
@@ -128,7 +128,7 @@ inspect.signature(fn)  # 查参数，比翻文档快
 
 ## 2 如何优化 Triton 算子
 
-Triton 算子的优化遵循一下工作顺序，重新测后，可以继续判断瓶颈类型、进一步优化，形成循环。
+Triton 算子的优化遵循以下工作顺序，重新测后，可以继续判断瓶颈类型、进一步优化，形成循环。
 ```
 写 kernel → 对拍正确性 → 测性能 → 判断瓶颈类型 → 优化 → 重新对拍 → 重新测
 ```
@@ -142,6 +142,7 @@ torch.testing.assert_close(got, ref, rtol=1e-2, atol=1e-2)
 比 `assert torch.allclose(...)` 好在**失败时告诉你最大偏差和下标**。
 
 **`atol` (Absolute Tolerance，绝对容差)**：允许的**绝对误差**上限。两个元素之间的差值不能超过这个固定值
+
 **`rtol` (Relative Tolerance，相对容差)**：允许的**相对误差**比例。它通常与参考值（`ref`）的大小相乘，数值越大，允许的绝对偏差就越大。
 
 PyTorch 判断 `got`（实际值）和 `ref`（参考值）是否“close”的底层数学公式是：
