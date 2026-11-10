@@ -12,6 +12,7 @@ export const categories: Category[] = [
 	{ name: '大语言模型', keywords: ['llm'] },
 	{ name: 'vLLM', keywords: ['vllm'] },
 	{ name: 'GPU 编程', keywords: ['cuda', 'triton'] },
+	{ name: 'Linux', keywords: ['linux'] },
 	{ name: 'Agent', keywords: ['agent'] },
 	{ name: '并发编程', keywords: ['concurrency'] },
 	{ name: 'MLOps', keywords: ['mlops'] },
